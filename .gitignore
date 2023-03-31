@@ -1,0 +1,10 @@
+# Intellij Idea
+.idea
+mixer_discord_bot.iml
+
+# Rust
+Cargo.lock
+target/
+
+# Database
+data.db
