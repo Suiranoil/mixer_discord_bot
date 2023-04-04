@@ -1,13 +1,14 @@
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Ord, PartialOrd, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Role {
     Tank,
     Dps,
     Support,
     None
 }
+
 
 impl PartialEq<i32> for Role {
     fn eq(&self, other: &i32) -> bool {

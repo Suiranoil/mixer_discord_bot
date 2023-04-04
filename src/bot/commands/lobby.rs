@@ -12,6 +12,7 @@ use serenity::model::id::{ChannelId, RoleId, UserId};
 use serenity::model::Permissions;
 use crate::bot::commands::MixerCommand;
 use crate::database::DatabaseContainer;
+use crate::mixer::mixer::Mixer;
 
 #[derive(Clone)]
 pub struct LobbyCommand;
@@ -149,8 +150,18 @@ impl LobbyCommand {
         let members = main_channel.members(ctx.cache().unwrap()).await?;
         let users = members.iter().map(|m| m.user.id).collect::<Vec<UserId>>();
         let players = db.get_players(users).await;
+        let players = db.get_players((0..10).map(|id| UserId(id)).collect()).await;
 
         println!("{:?}", players);
+
+        let mixer = Mixer::new(players);
+        if let Some((mut team1, mut team2)) = mixer.select_teams() {
+            team1.sort_by(|a, b| a.role.cmp(&b.role));
+            team2.sort_by(|a, b| a.role.cmp(&b.role));
+            let team1: Vec<_> = team1.iter().map(|p| p.player.bn_name.clone()).collect();
+            let team2: Vec<_> = team2.iter().map(|p| p.player.bn_name.clone()).collect();
+            println!("{:?}\n{:?}", team1, team2);
+        }
 
         interaction.create_interaction_response(ctx.http(), |response| {
             response.kind(InteractionResponseType::ChannelMessageWithSource)
