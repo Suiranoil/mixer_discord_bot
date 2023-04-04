@@ -1,9 +1,13 @@
 pub mod ping;
+pub mod lobby;
+pub mod rank;
+pub mod preference;
 
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 use serenity::async_trait;
+
 
 #[async_trait]
 pub trait MixerCommand: Sync + Send {

@@ -1,27 +1,25 @@
 pub mod commands;
-mod handler;
+pub mod interactions;
+mod handlers;
 
 use std::collections::HashMap;
 use std::sync::Arc;
 use serenity::{CacheAndHttp, Client};
-use serenity::client::bridge::gateway::ShardManager;
 use serenity::prelude::{GatewayIntents, TypeMap, TypeMapKey};
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::RwLock;
 use crate::bot::commands::MixerCommand;
-use crate::bot::handler::Handler;
+use crate::database::{MixerDatabase, DatabaseContainer};
+use crate::bot::handlers::command_handler::{MixerCommandHandler, MixerCommandHandlerContainer};
+use crate::bot::handlers::event_handler::Handler;
 
 pub struct MixerBot {
     token: String,
-    commands: HashMap<String, Box<dyn MixerCommand>>,
+    commands: Option<HashMap<String, Box<dyn MixerCommand>>>,
+    // lobbies: Vec<Lobby>
 }
 
-struct ShardManagerContainer;
 struct MixerBotContainer;
 
-
-impl TypeMapKey for ShardManagerContainer {
-    type Value = Arc<Mutex<ShardManager>>;
-}
 
 impl TypeMapKey for MixerBotContainer {
     type Value = Arc<RwLock<MixerBot>>;
@@ -32,19 +30,24 @@ impl MixerBot {
     pub fn new(token: String) -> Self {
         Self {
             token,
-            commands: HashMap::new(),
+            commands: Some(HashMap::new()),
+            // lobbies: vec![]
         }
     }
 
-    pub async fn start(self) -> serenity::Result<()> {
-        let mut client = Client::builder(&self.token, GatewayIntents::empty()).event_handler(Handler).await?;
+    pub async fn start(mut self) -> serenity::Result<()> {
+        let mut client = Client::builder(&self.token, GatewayIntents::all()).event_handler(Handler).await?;
 
-        let bot;
         {
             let mut data = client.data.write().await;
-            data.insert::<ShardManagerContainer>(client.shard_manager.clone());
+            data.insert::<MixerCommandHandlerContainer>(Arc::new(MixerCommandHandler::new(self.commands.unwrap())));
+            self.commands = None;
+
             data.insert::<MixerBotContainer>(Arc::new(RwLock::new(self)));
-            bot = data.get::<MixerBotContainer>().unwrap().clone();
+
+            let db = MixerDatabase::new("sqlite://database/data.db?mode=rwc").await;
+            db.init("./database/script.sql").await;
+            data.insert::<DatabaseContainer>(Arc::new(RwLock::new(db)));
         }
 
         let shard_manager = client.shard_manager.clone();
@@ -53,24 +56,26 @@ impl MixerBot {
         tokio::spawn(async move {
             tokio::signal::ctrl_c().await.expect("Could not register ctrl+c handler");
 
+            let data_ = data.clone();
+            let data_ = data_.read().await;
+            let bot = data_.get::<MixerBotContainer>().unwrap();
             bot.write().await.shutdown(data, cache_and_http).await;
 
             shard_manager.lock().await.shutdown_all().await;
         });
-
 
         client.start().await?;
 
         Ok(())
     }
 
-    pub fn add_command(&mut self, command: Box<dyn MixerCommand>) -> &mut Self {
-        self.commands.insert(command.name(), command);
+    pub fn add_command<T: MixerCommand + 'static>(&mut self, command: T) -> &mut Self {
+        self.commands.as_mut().unwrap().insert(command.name(), Box::new(command));
         self
     }
 
-    pub async fn shutdown(&self, data: Arc<RwLock<TypeMap>>, cache_and_http: Arc<CacheAndHttp>) {
-        println!("{:#?}", cache_and_http.http);
+    pub async fn shutdown(&mut self, data: Arc<RwLock<TypeMap>>, cache_and_http: Arc<CacheAndHttp>) {
+
         println!("Bot has been shutdown.");
     }
 }

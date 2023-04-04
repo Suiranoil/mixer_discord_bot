@@ -5,7 +5,5 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "*", features = ["full"] }
-serenity = { version = "*", default-features = false, features = ["client", "gateway", "rustls_backend", "model"] }
-sqlx = { version = "*", features = ["runtime-tokio-rustls", "sqlite"] }
+serenity = { version = "*", default-features = false, features = ["client", "gateway", "rustls_backend", "model", "cache", "utils"] }
 sea-orm = { version = "*", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
-ctrlc = "*"
