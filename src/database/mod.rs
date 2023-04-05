@@ -54,7 +54,7 @@ impl MixerDatabase {
             .expect("Could not insert player into database");
     }
 
-    pub async fn update_player_rank(&self, id: UserId, role: Role, rank: f32) {
+    pub async fn update_player_rank(&self, id: UserId, role: Option<Role>, rank: f32) {
         if !self.has_player(id).await {
             self.insert_player(id).await;
         }
@@ -62,10 +62,10 @@ impl MixerDatabase {
         let mut player = self.get_player(id).await.unwrap().into_active_model();
 
         match role {
-            Role::Tank => player.tank = Set(rank),
-            Role::Dps => player.dps = Set(rank),
-            Role::Support => player.support = Set(rank),
-            Role::None => return
+            Some(Role::Tank) => player.tank = Set(rank),
+            Some(Role::Dps) => player.dps = Set(rank),
+            Some(Role::Support) => player.support = Set(rank),
+            None => return
         }
 
         player.update(&self.connection)
@@ -73,7 +73,7 @@ impl MixerDatabase {
             .expect("Could not update player rank in database");
     }
 
-    pub async fn update_player_preference(&self, id: UserId, flex: bool, primary: Role, secondary: Role, tertiary: Role) {
+    pub async fn update_player_preference(&self, id: UserId, flex: bool, primary: Option<Role>, secondary: Option<Role>, tertiary: Option<Role>) {
         if !self.has_player(id).await {
             self.insert_player(id).await;
         }
@@ -81,9 +81,9 @@ impl MixerDatabase {
         let mut player = self.get_player(id).await.unwrap().into_active_model();
 
         player.flex = Set(flex);
-        player.primary_role = Set(primary.into());
-        player.secondary_role = Set(secondary.into());
-        player.tertiary_role = Set(tertiary.into());
+        player.primary_role = Set(Role::option_to_i32(primary));
+        player.secondary_role = Set(Role::option_to_i32(secondary));
+        player.tertiary_role = Set(Role::option_to_i32(tertiary));
 
         player.update(&self.connection)
             .await

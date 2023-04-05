@@ -67,7 +67,7 @@ impl MixerCommand for RankCommand {
                     }
                 };
 
-                let role = Role::from_str(interaction.data.options.get(0).unwrap().options.get(1).unwrap().value.as_ref().unwrap().as_str().unwrap()).unwrap();
+                let role = Role::from_str(interaction.data.options.get(0).unwrap().options.get(1).unwrap().value.as_ref().unwrap().as_str().unwrap()).ok();
                 let rank = interaction.data.options.get(0).unwrap().options.get(2).unwrap().value.as_ref().unwrap().as_u64().unwrap();
 
                 if rank < 1 || rank > 5000 {

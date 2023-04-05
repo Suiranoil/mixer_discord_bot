@@ -6,7 +6,6 @@ use serenity::model::application::interaction::{
     InteractionResponseType
 };
 use serenity::async_trait;
-use serenity::http::CacheHttp;
 use serenity::model::Permissions;
 use serenity::model::prelude::command::CommandOptionType;
 use serenity::model::prelude::interaction::application_command::CommandDataOptionValue::User;
@@ -99,12 +98,12 @@ impl MixerCommand for PreferenceCommand {
 
                 match interaction.data.options.get(0).unwrap().options.get(0).unwrap().name.as_str() {
                     "flex" => {
-                        db.update_player_preference(user.id, true, Role::None, Role::None, Role::None).await;
+                        db.update_player_preference(user.id, true, None, None, None).await;
                     },
                     "complex" => {
-                        let role1 = Role::from_str(interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(1).unwrap().value.as_ref().unwrap().as_str().unwrap()).unwrap();
-                        let role2 = Role::from_str(interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(2).unwrap().value.as_ref().unwrap().as_str().unwrap()).unwrap();
-                        let role3 = Role::from_str(interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(3).unwrap().value.as_ref().unwrap().as_str().unwrap()).unwrap();
+                        let role1 = Role::from_str(interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(1).unwrap().value.as_ref().unwrap().as_str().unwrap()).ok();
+                        let role2 = Role::from_str(interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(2).unwrap().value.as_ref().unwrap().as_str().unwrap()).ok();
+                        let role3 = Role::from_str(interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(3).unwrap().value.as_ref().unwrap().as_str().unwrap()).ok();
 
                         db.update_player_preference(user.id, false, role1, role2, role3).await;
                     },

@@ -12,6 +12,10 @@ use serenity::model::id::{ChannelId, RoleId, UserId};
 use serenity::model::Permissions;
 use crate::bot::commands::MixerCommand;
 use crate::database::DatabaseContainer;
+use crate::mixer::mixer;
+use crate::mixer::player::Player;
+use crate::mixer::role::Role;
+
 
 #[derive(Clone)]
 pub struct LobbyCommand;
@@ -146,11 +150,28 @@ impl LobbyCommand {
             member.move_to_voice_channel(ctx.http(), main_channel.id).await?;
         }
 
-        let members = main_channel.members(ctx.cache().unwrap()).await?;
-        let users = members.iter().map(|m| m.user.id).collect::<Vec<UserId>>();
+        // TODO: uncomment this
+        // let members = main_channel.members(ctx.cache().unwrap()).await?;
+        // let users = members.iter().map(|m| m.user.id).collect::<Vec<UserId>>();
+        let users = (0..10).map(|id| UserId::from(id)).collect::<Vec<UserId>>();
         let players = db.get_players(users).await;
-
-        println!("{:?}", players);
+        let players = players.into_iter().map(|p| Player::new(p)).collect::<Vec<Player>>();
+        let slots = vec![Role::Tank, Role::Dps, Role::Dps, Role::Support, Role::Support];
+        if let Some((team1, team2)) = mixer::mix_players(&players, slots) {
+            println!("Average rank {}", team1.average_rank());
+            println!("Average rank tank {}", team1.average_rank_role(&Role::Tank));
+            println!("Average rank dps {}", team1.average_rank_role(&Role::Dps));
+            println!("Average rank support {}", team1.average_rank_role(&Role::Support));
+            println!("Average rank {}", team2.average_rank());
+            println!("Average rank tank {}", team2.average_rank_role(&Role::Tank));
+            println!("Average rank dps {}", team2.average_rank_role(&Role::Dps));
+            println!("Average rank support {}\n", team2.average_rank_role(&Role::Support));
+            println!("Team 1: {:?}\n\n", team1.players.iter().map(|p| (p.0.clone().0, p.1.clone().unwrap().name.clone())).collect::<Vec<(Role, String)>>());
+            println!("Team 2: {:?}", team2.players.iter().map(|p| (p.0.clone().0, p.1.clone().unwrap().name.clone())).collect::<Vec<(Role, String)>>());
+        }
+        else {
+            println!("Fair lobby could not be mixed")
+        }
 
         interaction.create_interaction_response(ctx.http(), |response| {
             response.kind(InteractionResponseType::ChannelMessageWithSource)

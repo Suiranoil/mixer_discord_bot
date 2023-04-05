@@ -1,67 +1,11 @@
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Role {
     Tank,
     Dps,
-    Support,
-    None
-}
-
-impl PartialEq<i32> for Role {
-    fn eq(&self, other: &i32) -> bool {
-        match self {
-            Role::Tank => *other == 0,
-            Role::Dps => *other == 1,
-            Role::Support => *other == 2,
-            Role::None => *other == -1
-        }
-    }
-}
-
-impl PartialEq<Role> for i32 {
-    fn eq(&self, other: &Role) -> bool {
-        match other {
-            Role::Tank => *self == 0,
-            Role::Dps => *self == 1,
-            Role::Support => *self == 2,
-            Role::None => *self == -1
-        }
-    }
-}
-
-impl From<&Role> for i32 {
-    fn from(role: &Role) -> Self {
-        match role {
-            Role::Tank => 0,
-            Role::Dps => 1,
-            Role::Support => 2,
-            Role::None => -1
-        }
-    }
-}
-
-impl From<i32> for Role {
-    fn from(i: i32) -> Self {
-        match i {
-            0 => Role::Tank,
-            1 => Role::Dps,
-            2 => Role::Support,
-            _ => Role::None
-        }
-    }
-}
-
-impl Into<i32> for Role {
-    fn into(self) -> i32 {
-        match self {
-            Role::Tank => 0,
-            Role::Dps => 1,
-            Role::Support => 2,
-            Role::None => -1
-        }
-    }
+    Support
 }
 
 impl FromStr for Role {
@@ -72,9 +16,41 @@ impl FromStr for Role {
             "tank" => Ok(Role::Tank),
             "dps" => Ok(Role::Dps),
             "support" => Ok(Role::Support),
-            "none" => Ok(Role::None),
-            _ => Ok(Role::None)
+            _ => Err(())
         }
     }
 }
 
+impl From<i32> for Role {
+    fn from(i: i32) -> Self {
+        match i {
+            0 => Role::Tank,
+            1 => Role::Dps,
+            2 => Role::Support,
+            _ => panic!("Invalid role number")
+        }
+    }
+}
+
+impl PartialEq<i32> for Role {
+    fn eq(&self, other: &i32) -> bool {
+        match self {
+            Role::Tank => *other == 0,
+            Role::Dps => *other == 1,
+            Role::Support => *other == 2
+        }
+    }
+}
+
+impl Role {
+    pub fn iter() -> impl Iterator<Item = Role> {
+        vec![Role::Tank, Role::Dps, Role::Support].into_iter()
+    }
+
+    pub fn option_to_i32(role: Option<Role>) -> i32 {
+        match role {
+            Some(role) => role as i32,
+            None => -1
+        }
+    }
+}
