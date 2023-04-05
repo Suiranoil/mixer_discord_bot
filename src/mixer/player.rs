@@ -31,10 +31,11 @@ impl Player {
 
     pub fn base_priority(&self) -> HashMap<Role, f32> {
         let mut priorities = HashMap::new();
+        let priority_points = 100.0;
 
         if self.flex {
             for role in Role::iter() {
-                priorities.insert(role, (self.priority_roles.len() / 2) as f32);
+                priorities.insert(role, (priority_points / self.priority_roles.len() as f32) as f32);
             }
 
             return priorities;
@@ -42,7 +43,6 @@ impl Player {
 
         let count = self.priority_roles.iter().filter(|role| role.is_some()).count() as f32;
         let denominator = count * (count + 1.0) * (2.0 * count + 1.0) / 6.0;
-        let priority_points = 100.0;
 
         for (i, role) in self.priority_roles.iter().enumerate() {
             if let Some(role) = role {

@@ -68,7 +68,10 @@ fn calculate_priorities(players: &Vec<Player>, team1: &Team, team2: &Team) -> Ve
             }
         } as f32;
 
-        let complex_coefficient = role_diff_rank * role_diff_avg_rank;
+        let team_rank_difference = (team1.average_rank_role(role) - team2.average_rank_role(role)).abs();
+        let rank_difference_weight = 1.0 + 1.5 * team_rank_difference;
+
+        let complex_coefficient = role_diff_rank * role_diff_avg_rank * rank_difference_weight;
         item.2 *= player.ranks[role] / complex_coefficient;
     }
 
