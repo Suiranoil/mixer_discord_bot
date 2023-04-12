@@ -1,78 +1,167 @@
+use std::cmp::Ordering;
+use itertools::Itertools;
 use crate::mixer::role::Role;
 use crate::mixer::player::Player;
 use crate::mixer::team::Team;
 
 
-pub fn mix_players(players: &Vec<Player>, slots: Vec<Role>) -> Option<(Team, Team)> {
-    let mut players = players.clone();
-    let mut team1 = Team::new(slots.clone());
-    let mut team2 = Team::new(slots.clone());
+struct PlayerRoleEntry {
+    pub index: usize,
+    pub role: Role,
+    pub priority: f32,
+}
 
-    for _ in 0..(slots.len()*2) {
-        let mut priorities = calculate_priorities(&players, &team1, &team2);
-        priorities.sort_by(|(_, _, p1), (_, _, p2)| p2.partial_cmp(p1).unwrap());
+impl Eq for PlayerRoleEntry {}
 
-        for (player, role, _) in priorities {
-            if team1.full_rank() > team2.full_rank() {
-                if team2.has_slot(&role) {
-                    team2.add_player(&player, &role);
-                    players.retain(|p| p.id != player.id);
-                    break;
-                }
-            } else {
-                if team1.has_slot(&role) {
-                    team1.add_player(&player, &role);
-                    players.retain(|p| p.id != player.id);
-                    break;
-                }
-            }
-        }
+impl PartialEq for PlayerRoleEntry {
+    fn eq(&self, other: &Self) -> bool {
+        self.index == other.index && self.role == other.role
     }
-
-    if team1.count() < slots.len() || team2.count() < slots.len() {
-        return None;
-    }
-
-    Some((team1, team2))
 }
 
 
-fn calculate_priorities(players: &Vec<Player>, team1: &Team, team2: &Team) -> Vec<(Player, Role, f32)> {
-    let mut priorities = Vec::new();
+pub fn mix_players(players: &[Player], slots: Vec<Role>) -> Option<(Team, Team)> {
+    let players = players.to_vec();
 
-    for player in players {
-        for (role, priority) in player.base_priority() {
-            priorities.push((player.clone(), role, priority));
+    let entries = calculate_priorities(&players);
+    let tanks = entries.iter().filter(|e| e.role == Role::Tank).collect_vec();
+    let supports = entries.iter().filter(|e| e.role == Role::Support).collect_vec();
+    let dps = entries.iter().filter(|e| e.role == Role::Dps).collect_vec();
+
+
+    let tank_count = slots.iter().filter(|r| **r == Role::Tank).count();
+    let support_count = slots.iter().filter(|r| **r == Role::Support).count();
+    let dps_count = slots.iter().filter(|r| **r == Role::Dps).count();
+
+    let tank_combos = tanks.iter().combinations(tank_count)
+        .sorted_by(|a, b| {
+            let a = a.iter().map(|e| e.priority).sum::<f32>();
+            let b = b.iter().map(|e| e.priority).sum::<f32>();
+            a.partial_cmp(&b).unwrap_or(Ordering::Equal)
+        }).collect_vec();
+    let dps_combos = dps.iter().combinations(dps_count)
+        .sorted_by(|a, b| {
+            let a = a.iter().map(|e| e.priority).sum::<f32>();
+            let b = b.iter().map(|e| e.priority).sum::<f32>();
+            a.partial_cmp(&b).unwrap_or(Ordering::Equal)
+        }).collect_vec();
+    let support_combos = supports.iter().combinations(support_count)
+        .sorted_by(|a, b| {
+            let a = a.iter().map(|e| e.priority).sum::<f32>();
+            let b = b.iter().map(|e| e.priority).sum::<f32>();
+            a.partial_cmp(&b).unwrap_or(Ordering::Equal)
+        }).collect_vec();
+
+    let mut best_team1 = None;
+    let mut best_team2 = None;
+    let mut best_diff = None;
+
+    let threshold = 100.0;
+    
+    // this is awful, but it works
+    for tank1_combo in &tank_combos {
+        for tank2_combo in &tank_combos {
+            if tank1_combo.iter().any(|e| tank2_combo.iter().any(|e2| e.index == e2.index)) {
+                continue;
+            }
+
+            for dps1_combo in &dps_combos {
+                if tank1_combo.iter().any(|e| dps1_combo.iter().any(|e2| e.index == e2.index)) {
+                    continue;
+                }
+                if tank2_combo.iter().any(|e| dps1_combo.iter().any(|e2| e.index == e2.index)) {
+                    continue;
+                }
+
+                for dps2_combo in &dps_combos {
+                    if tank1_combo.iter().any(|e| dps2_combo.iter().any(|e2| e.index == e2.index)) {
+                        continue;
+                    }
+                    if tank2_combo.iter().any(|e| dps2_combo.iter().any(|e2| e.index == e2.index)) {
+                        continue;
+                    }
+                    if dps1_combo.iter().any(|e| dps2_combo.iter().any(|e2| e.index == e2.index)) {
+                        continue;
+                    }
+
+                    for support1_combo in &support_combos {
+                        if tank1_combo.iter().any(|e| support1_combo.iter().any(|e2| e.index == e2.index)) {
+                            continue;
+                        }
+                        if tank2_combo.iter().any(|e| support1_combo.iter().any(|e2| e.index == e2.index)) {
+                            continue;
+                        }
+                        if dps1_combo.iter().any(|e| support1_combo.iter().any(|e2| e.index == e2.index)) {
+                            continue;
+                        }
+                        if dps2_combo.iter().any(|e| support1_combo.iter().any(|e2| e.index == e2.index)) {
+                            continue;
+                        }
+
+                        for support2_combo in &support_combos {
+                            if tank1_combo.iter().any(|e| support2_combo.iter().any(|e2| e.index == e2.index)) {
+                                continue;
+                            }
+                            if tank2_combo.iter().any(|e| support2_combo.iter().any(|e2| e.index == e2.index)) {
+                                continue;
+                            }
+                            if dps1_combo.iter().any(|e| support2_combo.iter().any(|e2| e.index == e2.index)) {
+                                continue;
+                            }
+                            if dps2_combo.iter().any(|e| support2_combo.iter().any(|e2| e.index == e2.index)) {
+                                continue;
+                            }
+                            if support1_combo.iter().any(|e| support2_combo.iter().any(|e2| e.index == e2.index)) {
+                                continue;
+                            }
+
+                            let mut team1 = Team::new(slots.clone());
+                            let mut team2 = Team::new(slots.clone());
+
+                            for entry in tank1_combo.iter().chain(dps1_combo.iter()).chain(support1_combo.iter()) {
+                                team1.add_player(entry.index, &entry.role);
+                            }
+
+                            for entry in tank2_combo.iter().chain(dps2_combo.iter()).chain(support2_combo.iter()) {
+                                team2.add_player(entry.index, &entry.role);
+                            }
+
+                            let diff_rating = (team1.full_rating(&players).value - team2.full_rating(&players).value).abs();
+                            let diff_rating_tank = (team1.full_rating_role(&Role::Tank, &players).value - team2.full_rating_role(&Role::Tank, &players).value).abs();
+                            let diff_rating_dps = (team1.full_rating_role(&Role::Dps, &players).value - team2.full_rating_role(&Role::Dps, &players).value).abs();
+                            let diff_rating_support = (team1.full_rating_role(&Role::Support, &players).value - team2.full_rating_role(&Role::Support, &players).value).abs();
+                            let diff = diff_rating + (diff_rating_tank + diff_rating_dps + diff_rating_support);
+
+                            if diff + threshold < best_diff.unwrap_or(f32::MAX) {
+                                if diff < threshold {
+                                    return Some((team1, team2));
+                                }
+
+                                best_team1 = Some(team1);
+                                best_team2 = Some(team2);
+                                best_diff = Some(diff);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
-    for item in &mut priorities {
-        let (player, role, _) = item;
-        let empty_teams = team1.count_role(role) == 0 && team2.count_role(role) == 0;
+    if let (Some(team1), Some(team2)) = (best_team1, best_team2) {
+        Some((team1, team2))
+    } else {
+        None
+    }
+}
 
-        let role_diff_rank = 1.0 + {
-            if empty_teams {
-                0.0
-            } else {
-                (player.ranks[role] - (team1.full_rank_role(role) - team2.full_rank_role(role)).abs()).abs()
-            }
-        } as f32;
+fn calculate_priorities(players: &[Player]) -> Vec<PlayerRoleEntry> {
+    let mut priorities = Vec::new();
 
-        let sum_average_rank = team1.average_rank_role(role) + team2.average_rank_role(role);
-        let role_diff_avg_rank = 1.0 + {
-            if empty_teams {
-                let filtered_players = players.iter().filter(|player| player.priority_roles.contains(&Some(role.clone())) || player.flex).collect::<Vec<&Player>>();
-                (player.ranks[role] - filtered_players.iter().map(|player| player.ranks[role]).sum::<f32>() / filtered_players.len() as f32).abs()
-            } else {
-                (player.ranks[role] - sum_average_rank).abs()
-            }
-        } as f32;
-
-        let team_rank_difference = (team1.average_rank_role(role) - team2.average_rank_role(role)).abs();
-        let rank_difference_weight = 1.0 + 1.5 * team_rank_difference;
-
-        let complex_coefficient = role_diff_rank * role_diff_avg_rank * rank_difference_weight;
-        item.2 *= player.ranks[role] / complex_coefficient;
+    for (i, player) in players.iter().enumerate() {
+        for (role, priority) in player.base_priority() {
+            priorities.push(PlayerRoleEntry { index: i, role, priority });
+        }
     }
 
     priorities

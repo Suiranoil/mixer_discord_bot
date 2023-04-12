@@ -4,7 +4,5 @@ mixer_discord_bot.iml
 
 # Rust
 Cargo.lock
+Secrets.toml
 target/
-
-# Database
-data.db

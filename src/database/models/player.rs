@@ -11,15 +11,31 @@ pub struct Model {
     pub bn_name: String,
     #[sea_orm(column_type = "Text")]
     pub bn_tag: String,
-    #[sea_orm(default_value = 2500.0)]
-    pub tank: f32,
-    #[sea_orm(default_value = 2500.0)]
-    pub dps: f32,
-    #[sea_orm(default_value = 2500.0)]
-    pub support: f32,
 
     #[sea_orm(default_value = true)]
     pub flex: bool,
+
+    #[sea_orm(default_value = 2500.0)]
+    pub tank_rating: f32,
+    #[sea_orm(default_value = 580.0)]
+    pub tank_rd: f32,
+    #[sea_orm(default_value = 0.06)]
+    pub tank_volatility: f32,
+
+    #[sea_orm(default_value = 2500.0)]
+    pub dps_rating: f32,
+    #[sea_orm(default_value = 580.0)]
+    pub dps_rd: f32,
+    #[sea_orm(default_value = 0.06)]
+    pub dps_volatility: f32,
+
+    #[sea_orm(default_value = 2500.0)]
+    pub support_rating: f32,
+    #[sea_orm(default_value = 580.0)]
+    pub support_rd: f32,
+    #[sea_orm(default_value = 0.06)]
+    pub support_volatility: f32,
+
     #[sea_orm(default_value = -1)]
     pub primary_role: i32,
     #[sea_orm(default_value = -1)]

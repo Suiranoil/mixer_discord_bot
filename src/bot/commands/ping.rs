@@ -5,7 +5,6 @@ use serenity::model::application::interaction::{
     InteractionResponseType
 };
 use serenity::async_trait;
-use serenity::http::CacheHttp;
 use crate::bot::commands::MixerCommand;
 
 #[derive(Clone)]
@@ -23,27 +22,22 @@ impl MixerCommand for PingCommand {
 
     async fn execute(&self, ctx: &Context, interaction: ApplicationCommandInteraction) -> serenity::Result<()> {
         let content = "Pong!";
-        interaction.create_interaction_response(&ctx.http(), |response| {
+        interaction.create_interaction_response(ctx, |response| {
             response.kind(InteractionResponseType::ChannelMessageWithSource)
                 .interaction_response_data(|message| {
                     message.content(content).ephemeral(true)
                 })
         }).await?;
 
-        let follow1 = interaction.create_followup_message(&ctx.http(), |followup| {
+        let follow1 = interaction.create_followup_message(ctx, |followup| {
             followup.content("followup1").ephemeral(true)
         }).await?;
-        let follow2 = interaction.create_followup_message(&ctx.http(), |followup| {
+        let follow2 = interaction.create_followup_message(ctx, |followup| {
             followup.content("followup2").ephemeral(true)
         }).await?;
 
-        interaction.delete_followup_message(&ctx.http(), follow1).await?;
-        interaction.delete_followup_message(&ctx.http(), follow2).await?;
-
-        println!("{:#?}", interaction.get_interaction_response(&ctx.http).await?);
-        // interaction.
-
-        println!("Interacted");
+        interaction.delete_followup_message(ctx, follow1).await?;
+        interaction.delete_followup_message(ctx, follow2).await?;
 
         Ok(())
     }

@@ -21,6 +21,16 @@ impl FromStr for Role {
     }
 }
 
+impl From<Role> for i32 {
+    fn from(role: Role) -> Self {
+        match role {
+            Role::Tank => 0,
+            Role::Dps => 1,
+            Role::Support => 2
+        }
+    }
+}
+
 impl From<i32> for Role {
     fn from(i: i32) -> Self {
         match i {

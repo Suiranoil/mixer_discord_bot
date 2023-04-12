@@ -1,10 +1,14 @@
 use std::collections::HashMap;
 use crate::mixer::player::Player;
+use crate::mixer::rating::Rating;
 use crate::mixer::role::Role;
 
 #[derive(Debug, Clone)]
 pub struct Team {
-    pub players: HashMap<(Role, i32), Option<Player>>
+    pub players: HashMap<(Role, i32), Option<usize>>,
+
+    max_role: HashMap<Role, usize>,
+    count_role: HashMap<Role, usize>,
 }
 
 
@@ -19,61 +23,80 @@ impl Team {
                     }
                 }
                 players
-            }
+            },
+            max_role: {
+                let mut max_role = HashMap::new();
+                for role in Role::iter() {
+                    max_role.insert(role, slots.iter().filter(|slot| **slot == role).count());
+                }
+                max_role
+            },
+            count_role: {
+                let mut count_role = HashMap::new();
+                for role in Role::iter() {
+                    count_role.insert(role, 0);
+                }
+                count_role
+            },
         }
     }
 
     pub fn count(&self) -> usize {
-        self.players.iter().filter(|(_, player)| player.is_some()).count()
+        self.count_role.values().sum()
     }
 
     pub fn count_role(&self, role: &Role) -> usize {
-        self.players.iter().filter(|((r, _), player)| r == role && player.is_some()).count()
+        self.count_role.get(role).unwrap().clone()
     }
 
-    pub fn full_rank(&self) -> f32 {
-        self.players.iter().map(|((role, _), player)| {
-            if let Some(player) = player {
-                player.ranks.get(role).unwrap().clone()
+    pub fn full_rating(&self, players: &[Player]) -> Rating {
+        self.players.iter().map(|((role, _), index)| {
+            if let Some(index) = index {
+                players[*index].ranks.get(role).unwrap().clone()
             } else {
-                0.0
+                Rating::zero()
             }
-        }).sum::<f32>()
+        }).sum()
     }
 
-    pub fn average_rank(&self) -> f32 {
+    pub fn average_rating(&self, players: &[Player]) -> Rating {
         if self.players.len() == 0 {
-            return 0.0;
+            return Rating::zero();
         }
 
-        self.full_rank() / self.players.len() as f32
+        self.full_rating(players) / self.players.len() as f32
     }
 
-    pub fn full_rank_role(&self, role: &Role) -> f32 {
-        self.players.iter().filter(|((r, _), _)| r == role).map(|((_, _), player)| {
-            if let Some(player) = player {
-                player.ranks.get(&role).unwrap().clone()
+    pub fn full_rating_role(&self, role: &Role, players: &[Player]) -> Rating {
+        self.players.iter().filter(|((r, _), _)| r == role).map(|((_, _), index)| {
+            if let Some(index) = index {
+                players[*index].ranks.get(&role).unwrap().clone()
             } else {
-                0.0
+                Rating::zero()
             }
-        }).sum::<f32>()
+        }).sum()
     }
 
-    pub fn average_rank_role(&self, role: &Role) -> f32 {
+    pub fn average_rating_role(&self, role: &Role, players: &[Player]) -> Rating {
         let count = self.players.iter().filter(|((r, _), _)| r == role).count();
         if count == 0 {
-            return 0.0;
+            return Rating::zero()
         }
 
-        self.full_rank_role(role) / count as f32
+        self.full_rating_role(role, players) / count as f32
     }
 
     pub fn has_slot(&self, role: &Role) -> bool {
-        self.players.iter().filter(|((r, _), _)| r == role).any(|(_, player)| player.is_none())
+        self.count_role(role) < *self.max_role.get(role).unwrap()
     }
 
-    pub fn add_player(&mut self, player: &Player, role: &Role) {
-        let slot = self.players.iter().filter(|((r, _), _)| r == role).find(|(_, player)| player.is_none()).unwrap().0.clone();
-        self.players.insert(slot, Some(player.clone()));
+    pub fn add_player(&mut self, index: usize, role: &Role) {
+        if !self.has_slot(role) {
+            panic!("No slot for role {:?}", role);
+        }
+
+        let count = self.count_role(role);
+        self.players.insert((*role, count as i32), Some(index));
+        self.count_role.insert(*role, count + 1);
     }
 }

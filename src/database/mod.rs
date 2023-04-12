@@ -1,13 +1,14 @@
 pub mod models;
 
 use std::sync::Arc;
-use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, Database, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter, SqlxPostgresConnector};
 use sea_orm::ActiveValue::Set;
 use serenity::model::id::{ChannelId, UserId};
 use serenity::model::prelude::GuildId;
 use serenity::prelude::TypeMapKey;
-use tokio::fs;
+use sqlx::PgPool;
 use tokio::sync::RwLock;
+use crate::mixer::rating::Rating;
 use crate::mixer::role::Role;
 
 pub struct MixerDatabase {
@@ -15,32 +16,12 @@ pub struct MixerDatabase {
 }
 
 impl MixerDatabase {
-    pub async fn new(url: &str) -> Self {
+    pub fn new (pool: PgPool) -> Self {
         Self {
-            connection: Database::connect(url).await.expect("Could not connect to database")
+            connection: SqlxPostgresConnector::from_sqlx_postgres_pool(pool)
         }
     }
 
-    pub async fn init(&self, script_path: &str) {
-        let script = fs::read_to_string(script_path).await.expect("Provided script path for creating database does not exist");
-
-        self.connection.execute_unprepared(&script).await.expect("Invalid database creating script provided");
-    }
-
-    pub fn get_connection(&self) -> DatabaseConnection {
-        self.connection.clone()
-    }
-
-    //CREATE TABLE IF NOT EXISTS players (
-    //     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    //     discord_id INTEGER NOT NULL,
-    //     bn_name TEXT,
-    //     bn_tag TEXT,
-    //     tank REAL NOT NULL,
-    //     dps REAL NOT NULL,
-    //     support REAL NOT NULL,
-    //     UNIQUE (discord_id)
-    // );
     pub async fn insert_player(&self, id: UserId) {
         let player = models::player::ActiveModel {
             discord_id: Set(id.0 as i64),
@@ -54,17 +35,29 @@ impl MixerDatabase {
             .expect("Could not insert player into database");
     }
 
-    pub async fn update_player_rank(&self, id: UserId, role: Option<Role>, rank: f32) {
-        if !self.has_player(id).await {
+    pub async fn update_player_rank(&self, id: UserId, role: Option<Role>, rating: Rating) {
+        if self.get_player(id).await.is_none() {
             self.insert_player(id).await;
         }
 
         let mut player = self.get_player(id).await.unwrap().into_active_model();
 
         match role {
-            Some(Role::Tank) => player.tank = Set(rank),
-            Some(Role::Dps) => player.dps = Set(rank),
-            Some(Role::Support) => player.support = Set(rank),
+            Some(Role::Tank) => {
+                player.tank_rating = Set(rating.value);
+                player.tank_rd = Set(rating.rd);
+                player.tank_volatility = Set(rating.volatility);
+            },
+            Some(Role::Dps) => {
+                player.dps_rating = Set(rating.value);
+                player.dps_rd = Set(rating.rd);
+                player.dps_volatility = Set(rating.volatility);
+            },
+            Some(Role::Support) => {
+                player.support_rating = Set(rating.value);
+                player.support_rd = Set(rating.rd);
+                player.support_volatility = Set(rating.volatility);
+            },
             None => return
         }
 
@@ -74,7 +67,7 @@ impl MixerDatabase {
     }
 
     pub async fn update_player_preference(&self, id: UserId, flex: bool, primary: Option<Role>, secondary: Option<Role>, tertiary: Option<Role>) {
-        if !self.has_player(id).await {
+        if self.get_player(id).await.is_none() {
             self.insert_player(id).await;
         }
 
@@ -106,29 +99,20 @@ impl MixerDatabase {
             .expect("Could not get players from database")
     }
 
-    pub async fn has_player(&self, id: UserId) -> bool {
-        models::player::Entity::find()
-            .filter(models::player::Column::DiscordId.eq(id.0))
-            .one(&self.connection)
-            .await
-            .expect("Could not get player from database")
-            .is_some()
-    }
+    // pub async fn get_all_guild_lobbies(&self, guild_id: GuildId) -> Vec<models::lobby::Model> {
+    //     models::lobby::Entity::find()
+    //         .filter(models::lobby::Column::GuildId.eq(guild_id.0))
+    //         .all(&self.connection)
+    //         .await
+    //         .expect("Could not get lobbies from database")
+    // }
 
-    pub async fn get_all_guild_lobbies(&self, guild_id: GuildId) -> Vec<models::lobby::Model> {
-        models::lobby::Entity::find()
-            .filter(models::lobby::Column::GuildId.eq(guild_id.0))
-            .all(&self.connection)
-            .await
-            .expect("Could not get lobbies from database")
-    }
-
-    pub async fn get_guild_lobby(&self, lobby_id: i32) -> Option<models::lobby::Model> {
-        models::lobby::Entity::find_by_id(lobby_id)
-            .one(&self.connection)
-            .await
-            .expect("Could not get lobby from database")
-    }
+    // pub async fn get_guild_lobby(&self, lobby_id: i32) -> Option<models::lobby::Model> {
+    //     models::lobby::Entity::find_by_id(lobby_id)
+    //         .one(&self.connection)
+    //         .await
+    //         .expect("Could not get lobby from database")
+    // }
 
     pub async fn insert_guild_lobby(&self, guild_id: GuildId, main_voice_id: ChannelId, red_team_voice_id: ChannelId, blue_team_voice_id: ChannelId) {
         let lobby = models::lobby::ActiveModel {

@@ -3,79 +3,78 @@ pub mod interactions;
 mod handlers;
 
 use std::collections::HashMap;
-use std::sync::Arc;
-use serenity::{CacheAndHttp, Client};
-use serenity::prelude::{GatewayIntents, TypeMap, TypeMapKey};
-use tokio::sync::RwLock;
+use serenity::client::{Context, EventHandler};
+use serenity::http::CacheHttp;
+use serenity::model::application::interaction::{Interaction, InteractionResponseType};
+use serenity::model::gateway::Ready;
+use serenity::async_trait;
+use serenity::model::application::command::Command;
+use serenity::model::prelude::VoiceState;
+
 use crate::bot::commands::MixerCommand;
-use crate::database::{MixerDatabase, DatabaseContainer};
-use crate::bot::handlers::command_handler::{MixerCommandHandler, MixerCommandHandlerContainer};
-use crate::bot::handlers::event_handler::Handler;
+use crate::bot::handlers::command_handler::MixerCommandHandler;
+use crate::database::DatabaseContainer;
 
 pub struct MixerBot {
-    token: String,
-    commands: Option<HashMap<String, Box<dyn MixerCommand>>>,
-    // lobbies: Vec<Lobby>
+    command_handler: MixerCommandHandler,
 }
-
-struct MixerBotContainer;
-
-
-impl TypeMapKey for MixerBotContainer {
-    type Value = Arc<RwLock<MixerBot>>;
-}
-
 
 impl MixerBot {
-    pub fn new(token: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            token,
-            commands: Some(HashMap::new()),
-            // lobbies: vec![]
+            command_handler: MixerCommandHandler::new(HashMap::new())
         }
-    }
-
-    pub async fn start(mut self) -> serenity::Result<()> {
-        let mut client = Client::builder(&self.token, GatewayIntents::all()).event_handler(Handler).await?;
-
-        {
-            let mut data = client.data.write().await;
-            data.insert::<MixerCommandHandlerContainer>(Arc::new(MixerCommandHandler::new(self.commands.unwrap())));
-            self.commands = None;
-
-            data.insert::<MixerBotContainer>(Arc::new(RwLock::new(self)));
-
-            let db = MixerDatabase::new("sqlite://database/data.db?mode=rwc").await;
-            db.init("./database/script.sql").await;
-            data.insert::<DatabaseContainer>(Arc::new(RwLock::new(db)));
-        }
-
-        let shard_manager = client.shard_manager.clone();
-        let cache_and_http = client.cache_and_http.clone();
-        let data = client.data.clone();
-        tokio::spawn(async move {
-            tokio::signal::ctrl_c().await.expect("Could not register ctrl+c handler");
-
-            let data_ = data.clone();
-            let data_ = data_.read().await;
-            let bot = data_.get::<MixerBotContainer>().unwrap();
-            bot.write().await.shutdown(data, cache_and_http).await;
-
-            shard_manager.lock().await.shutdown_all().await;
-        });
-
-        client.start().await?;
-
-        Ok(())
     }
 
     pub fn add_command<T: MixerCommand + 'static>(&mut self, command: T) -> &mut Self {
-        self.commands.as_mut().unwrap().insert(command.name(), Box::new(command));
+        self.command_handler.add_command(command);
         self
     }
+}
 
-    pub async fn shutdown(&mut self, data: Arc<RwLock<TypeMap>>, cache_and_http: Arc<CacheAndHttp>) {
+#[async_trait]
+impl EventHandler for MixerBot {
+    async fn ready(&self, ctx: Context, data_about_bot: Ready) {
+        println!("{} is connected!", data_about_bot.user.name);
 
-        println!("Bot has been shutdown.");
+        Command::set_global_application_commands(&ctx.http, |commands| {
+            self.command_handler.create_all(commands);
+            commands
+        }).await.unwrap();
+    }
+
+    async fn voice_state_update(&self, ctx: Context, _old: Option<VoiceState>, new: VoiceState) {
+        if let Some(guild_id) = new.guild_id {
+            if let Some(channel_id) = new.channel_id {
+                let data = ctx.data.read().await;
+                let db = data.get::<DatabaseContainer>().unwrap().read().await;
+
+                if let Some(_) = db.get_lobby_by_channel(guild_id, channel_id).await {
+                    if let Some(member) = new.member {
+                        if member.user.bot {
+                            return;
+                        }
+                    }
+
+                    if db.get_player(new.user_id).await.is_none() {
+                        db.insert_player(new.user_id).await;
+                    }
+                }
+            }
+        }
+    }
+
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        match interaction {
+            Interaction::ApplicationCommand(command) => {
+                self.command_handler.handle_command(&ctx, command).await.unwrap();
+            }
+            Interaction::MessageComponent(component) => {
+                component.create_interaction_response(ctx.http(), |response| {
+                    response.kind(InteractionResponseType::DeferredUpdateMessage)
+                }).await.unwrap();
+            }
+            _ => {}
+        }
     }
 }

@@ -81,7 +81,7 @@ impl MixerCommand for PreferenceCommand {
         let user = match interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(0).unwrap().resolved.as_ref().unwrap() {
             User(user, _) => user,
             _ => {
-                interaction.create_interaction_response(&ctx.http, |response| {
+                interaction.create_interaction_response(ctx, |response| {
                     response.kind(InteractionResponseType::ChannelMessageWithSource)
                         .interaction_response_data(|message| {
                             message.content(format!("User not found")).ephemeral(true)
@@ -110,7 +110,7 @@ impl MixerCommand for PreferenceCommand {
                     _ => {}
                 }
 
-                interaction.create_interaction_response(&ctx.http, |response| {
+                interaction.create_interaction_response(ctx, |response| {
                     response.kind(InteractionResponseType::ChannelMessageWithSource)
                         .interaction_response_data(|message| {
                             message.content(format!("Preference set for {}", user.name)).ephemeral(true)

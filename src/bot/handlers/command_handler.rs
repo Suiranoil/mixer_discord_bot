@@ -1,9 +1,7 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 use serenity::builder::CreateApplicationCommands;
 use serenity::client::Context;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
-use serenity::prelude::TypeMapKey;
 use crate::bot::commands::MixerCommand;
 
 pub struct MixerCommandHandler {
@@ -15,6 +13,10 @@ impl MixerCommandHandler {
         Self {
             commands
         }
+    }
+
+    pub fn add_command<T: MixerCommand + 'static>(&mut self, command: T) {
+        self.commands.insert(command.name(), Box::new(command));
     }
 
     pub fn create_all(&self, create_commands: &mut CreateApplicationCommands) {
@@ -34,10 +36,4 @@ impl MixerCommandHandler {
 
         Ok(())
     }
-}
-
-pub struct MixerCommandHandlerContainer;
-
-impl TypeMapKey for MixerCommandHandlerContainer {
-    type Value = Arc<MixerCommandHandler>;
 }

@@ -2,6 +2,7 @@ pub mod ping;
 pub mod lobby;
 pub mod rank;
 pub mod preference;
+pub mod settings;
 
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;

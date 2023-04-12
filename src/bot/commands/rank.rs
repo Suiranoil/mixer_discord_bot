@@ -8,6 +8,7 @@ use serenity::model::Permissions;
 use serenity::model::prelude::command::CommandOptionType;
 use crate::bot::commands::MixerCommand;
 use crate::database::DatabaseContainer;
+use crate::mixer::rating::Rating;
 use crate::mixer::role::Role;
 
 #[derive(Clone)]
@@ -71,7 +72,7 @@ impl MixerCommand for RankCommand {
                 let rank = interaction.data.options.get(0).unwrap().options.get(2).unwrap().value.as_ref().unwrap().as_u64().unwrap();
 
                 if rank < 1 || rank > 5000 {
-                    interaction.create_interaction_response(&ctx.http, |response| {
+                    interaction.create_interaction_response(ctx, |response| {
                         response.kind(InteractionResponseType::ChannelMessageWithSource)
                             .interaction_response_data(|message| {
                                 message.content(format!("Rank must be between 1 and 5000")).ephemeral(true)
@@ -83,10 +84,14 @@ impl MixerCommand for RankCommand {
                 {
                     let data = ctx.data.read().await;
                     let db = data.get::<DatabaseContainer>().unwrap().read().await;
-                    db.update_player_rank(user.id, role, rank as f32).await;
+
+                    db.update_player_rank(user.id, role, Rating::new_no_sigma(
+                        rank as f32,
+                        300.0
+                    )).await;
                 }
 
-                interaction.create_interaction_response(&ctx.http, |response| {
+                interaction.create_interaction_response(ctx, |response| {
                     response.kind(InteractionResponseType::ChannelMessageWithSource)
                         .interaction_response_data(|message| {
                             message.content(format!("Setting rank for user {:?} to {:?} {:?}", user.id, role, rank))
