@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::iter::Sum;
 use std::ops::{Add, AddAssign, Div};
+
 use crate::algorithm::glicko2;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -14,7 +15,9 @@ impl Eq for Rating {}
 
 impl Ord for Rating {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.value.partial_cmp(&other.value).unwrap_or(Ordering::Equal)
+        self.value
+            .partial_cmp(&other.value)
+            .unwrap_or(Ordering::Equal)
     }
 }
 
@@ -67,7 +70,7 @@ impl Div<f32> for Rating {
 }
 
 impl Sum for Rating {
-    fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         let mut sum = Self::zero();
         for rating in iter {
             sum += rating;
@@ -94,7 +97,15 @@ impl Rating {
     }
 
     pub fn update(&mut self, other: &Self, score: f32) {
-        let (value, rd, sigma) = glicko2::update(self.value, self.rd, self.volatility, other.value, other.rd, 5.0/3.0, score);
+        let (value, rd, sigma) = glicko2::update(
+            self.value,
+            self.rd,
+            self.volatility,
+            other.value,
+            other.rd,
+            5.0 / 3.0,
+            score,
+        );
         self.value = value;
         self.rd = rd;
         self.volatility = sigma;

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "*", features = ["full"] }
+tracing = "*"
 serenity = {version = "*", default-features = false, features = ["rustls_backend", "client", "gateway", "model", "cache", "collector", "utils"] }
 sqlx = { version = "0.6.2", features = ["runtime-tokio-native-tls", "postgres"] }
 sea-orm = { version = "*", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }

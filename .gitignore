@@ -2,6 +2,9 @@
 .idea
 mixer_discord_bot.iml
 
+# VSCode
+.vscode
+
 # Rust
 Cargo.lock
 Secrets.toml

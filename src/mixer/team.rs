@@ -1,7 +1,9 @@
+use sea_orm::Iterable;
 use std::collections::HashMap;
+
+use crate::database::models::role::Role;
 use crate::mixer::player::Player;
 use crate::mixer::rating::Rating;
-use crate::mixer::role::Role;
 
 #[derive(Debug, Clone)]
 pub struct Team {
@@ -10,7 +12,6 @@ pub struct Team {
     max_role: HashMap<Role, usize>,
     count_role: HashMap<Role, usize>,
 }
-
 
 impl Team {
     pub fn new(slots: Vec<Role>) -> Self {
@@ -50,13 +51,16 @@ impl Team {
     }
 
     pub fn full_rating(&self, players: &[Player]) -> Rating {
-        self.players.iter().map(|((role, _), index)| {
-            if let Some(index) = index {
-                players[*index].ranks.get(role).unwrap().clone()
-            } else {
-                Rating::zero()
-            }
-        }).sum()
+        self.players
+            .iter()
+            .map(|((role, _), index)| {
+                if let Some(index) = index {
+                    players[*index].ranks.get(role).unwrap().clone()
+                } else {
+                    Rating::zero()
+                }
+            })
+            .sum()
     }
 
     pub fn average_rating(&self, players: &[Player]) -> Rating {
@@ -68,19 +72,23 @@ impl Team {
     }
 
     pub fn full_rating_role(&self, role: &Role, players: &[Player]) -> Rating {
-        self.players.iter().filter(|((r, _), _)| r == role).map(|((_, _), index)| {
-            if let Some(index) = index {
-                players[*index].ranks.get(&role).unwrap().clone()
-            } else {
-                Rating::zero()
-            }
-        }).sum()
+        self.players
+            .iter()
+            .filter(|((r, _), _)| r == role)
+            .map(|((_, _), index)| {
+                if let Some(index) = index {
+                    players[*index].ranks.get(&role).unwrap().clone()
+                } else {
+                    Rating::zero()
+                }
+            })
+            .sum()
     }
 
     pub fn average_rating_role(&self, role: &Role, players: &[Player]) -> Rating {
         let count = self.players.iter().filter(|((r, _), _)| r == role).count();
         if count == 0 {
-            return Rating::zero()
+            return Rating::zero();
         }
 
         self.full_rating_role(role, players) / count as f32

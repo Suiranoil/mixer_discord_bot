@@ -1,17 +1,17 @@
-use std::str::FromStr;
+use serenity::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 use serenity::model::application::interaction::{
-    application_command::ApplicationCommandInteraction,
-    InteractionResponseType
+    application_command::ApplicationCommandInteraction, InteractionResponseType,
 };
-use serenity::async_trait;
-use serenity::model::Permissions;
 use serenity::model::prelude::command::CommandOptionType;
 use serenity::model::prelude::interaction::application_command::CommandDataOptionValue::User;
+use serenity::model::Permissions;
+
 use crate::bot::commands::MixerCommand;
+use crate::database::models::role::Role;
+use crate::database::queries::prelude::*;
 use crate::database::DatabaseContainer;
-use crate::mixer::role::Role;
 
 #[derive(Clone)]
 pub struct PreferenceCommand;
@@ -23,29 +23,43 @@ impl MixerCommand for PreferenceCommand {
     }
 
     fn create(&self, command: &mut CreateApplicationCommand) {
-        command.name(self.name()).description("Hello world!")
+        command
+            .name(self.name())
+            .description("Hello world!")
             .create_option(|option| {
-                option.name("set").description("Set role preference for user")
+                option
+                    .name("set")
+                    .description("Set role preference for user")
                     .kind(CommandOptionType::SubCommandGroup)
                     .create_sub_option(|option| {
-                        option.name("flex").description("Set role preference for user")
+                        option
+                            .name("flex")
+                            .description("Set role preference for user")
                             .kind(CommandOptionType::SubCommand)
                             .create_sub_option(|option| {
-                                option.name("user").description("User to set preference for")
+                                option
+                                    .name("user")
+                                    .description("User to set preference for")
                                     .kind(CommandOptionType::User)
                                     .required(true)
                             })
                     })
                     .create_sub_option(|option| {
-                        option.name("complex").description("Set role preference for user")
+                        option
+                            .name("complex")
+                            .description("Set role preference for user")
                             .kind(CommandOptionType::SubCommand)
                             .create_sub_option(|option| {
-                                option.name("user").description("User to set preference for")
+                                option
+                                    .name("user")
+                                    .description("User to set preference for")
                                     .kind(CommandOptionType::User)
                                     .required(true)
                             })
                             .create_sub_option(|option| {
-                                option.name("first").description("First role preference")
+                                option
+                                    .name("first")
+                                    .description("First role preference")
                                     .kind(CommandOptionType::String)
                                     .required(true)
                                     .add_string_choice("Tank", "tank")
@@ -54,7 +68,9 @@ impl MixerCommand for PreferenceCommand {
                                     .add_string_choice("None", "none")
                             })
                             .create_sub_option(|option| {
-                                option.name("second").description("Second role preference")
+                                option
+                                    .name("second")
+                                    .description("Second role preference")
                                     .kind(CommandOptionType::String)
                                     .required(true)
                                     .add_string_choice("Tank", "tank")
@@ -63,7 +79,9 @@ impl MixerCommand for PreferenceCommand {
                                     .add_string_choice("None", "none")
                             })
                             .create_sub_option(|option| {
-                                option.name("third").description("Third role preference")
+                                option
+                                    .name("third")
+                                    .description("Third role preference")
                                     .kind(CommandOptionType::String)
                                     .required(true)
                                     .add_string_choice("Tank", "tank")
@@ -77,16 +95,37 @@ impl MixerCommand for PreferenceCommand {
             .dm_permission(false);
     }
 
-    async fn execute(&self, ctx: &Context, interaction: ApplicationCommandInteraction) -> serenity::Result<()> {
-        let user = match interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(0).unwrap().resolved.as_ref().unwrap() {
+    async fn execute(
+        &self,
+        ctx: &Context,
+        interaction: ApplicationCommandInteraction,
+    ) -> serenity::Result<()> {
+        let user = match interaction
+            .data
+            .options
+            .get(0)
+            .unwrap()
+            .options
+            .get(0)
+            .unwrap()
+            .options
+            .get(0)
+            .unwrap()
+            .resolved
+            .as_ref()
+            .unwrap()
+        {
             User(user, _) => user,
             _ => {
-                interaction.create_interaction_response(ctx, |response| {
-                    response.kind(InteractionResponseType::ChannelMessageWithSource)
-                        .interaction_response_data(|message| {
-                            message.content(format!("User not found")).ephemeral(true)
-                        })
-                }).await?;
+                interaction
+                    .create_interaction_response(ctx, |response| {
+                        response
+                            .kind(InteractionResponseType::ChannelMessageWithSource)
+                            .interaction_response_data(|message| {
+                                message.content(format!("User not found")).ephemeral(true)
+                            })
+                    })
+                    .await?;
                 return Ok(());
             }
         };
@@ -96,27 +135,112 @@ impl MixerCommand for PreferenceCommand {
                 let data = ctx.data.read().await;
                 let db = data.get::<DatabaseContainer>().unwrap().read().await;
 
-                match interaction.data.options.get(0).unwrap().options.get(0).unwrap().name.as_str() {
+                match interaction
+                    .data
+                    .options
+                    .get(0)
+                    .unwrap()
+                    .options
+                    .get(0)
+                    .unwrap()
+                    .name
+                    .as_str()
+                {
                     "flex" => {
-                        db.update_player_preference(user.id, true, None, None, None).await;
-                    },
+                        PlayerQuery::update_preference(
+                            db.connection(),
+                            user.id,
+                            true,
+                            None,
+                            None,
+                            None,
+                        )
+                        .await;
+                    }
                     "complex" => {
-                        let role1 = Role::from_str(interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(1).unwrap().value.as_ref().unwrap().as_str().unwrap()).ok();
-                        let role2 = Role::from_str(interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(2).unwrap().value.as_ref().unwrap().as_str().unwrap()).ok();
-                        let role3 = Role::from_str(interaction.data.options.get(0).unwrap().options.get(0).unwrap().options.get(3).unwrap().value.as_ref().unwrap().as_str().unwrap()).ok();
+                        let role1 = Role::try_from(
+                            interaction
+                                .data
+                                .options
+                                .get(0)
+                                .unwrap()
+                                .options
+                                .get(0)
+                                .unwrap()
+                                .options
+                                .get(1)
+                                .unwrap()
+                                .value
+                                .as_ref()
+                                .unwrap()
+                                .as_str()
+                                .unwrap(),
+                        )
+                        .ok();
+                        let role2 = Role::try_from(
+                            interaction
+                                .data
+                                .options
+                                .get(0)
+                                .unwrap()
+                                .options
+                                .get(0)
+                                .unwrap()
+                                .options
+                                .get(2)
+                                .unwrap()
+                                .value
+                                .as_ref()
+                                .unwrap()
+                                .as_str()
+                                .unwrap(),
+                        )
+                        .ok();
+                        let role3 = Role::try_from(
+                            interaction
+                                .data
+                                .options
+                                .get(0)
+                                .unwrap()
+                                .options
+                                .get(0)
+                                .unwrap()
+                                .options
+                                .get(3)
+                                .unwrap()
+                                .value
+                                .as_ref()
+                                .unwrap()
+                                .as_str()
+                                .unwrap(),
+                        )
+                        .ok();
 
-                        db.update_player_preference(user.id, false, role1, role2, role3).await;
-                    },
+                        PlayerQuery::update_preference(
+                            db.connection(),
+                            user.id,
+                            false,
+                            role1,
+                            role2,
+                            role3,
+                        )
+                        .await;
+                    }
                     _ => {}
                 }
 
-                interaction.create_interaction_response(ctx, |response| {
-                    response.kind(InteractionResponseType::ChannelMessageWithSource)
-                        .interaction_response_data(|message| {
-                            message.content(format!("Preference set for {}", user.name)).ephemeral(true)
-                        })
-                }).await?;
-            },
+                interaction
+                    .create_interaction_response(ctx, |response| {
+                        response
+                            .kind(InteractionResponseType::ChannelMessageWithSource)
+                            .interaction_response_data(|message| {
+                                message
+                                    .content(format!("Preference set for {}", user.name))
+                                    .ephemeral(true)
+                            })
+                    })
+                    .await?;
+            }
             _ => {}
         }
 

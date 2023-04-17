@@ -1,21 +1,25 @@
-use std::collections::HashMap;
+use sea_orm::entity::prelude::*;
+use sea_orm::Iterable;
 use serenity::model::id::UserId;
+use sqlx::types::chrono::Utc;
+use std::collections::HashMap;
+
 use crate::database::models::player::Model;
+use crate::database::models::role::Role;
 use crate::mixer::rating::Rating;
-use crate::mixer::role::Role;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Player {
-    pub(crate) id: i32,
-    pub(crate) discord_id: UserId,
-    pub(crate) bn_name: String,
-    pub(crate) bn_tag: String,
+    pub id: i32,
+    pub discord_id: UserId,
+    pub bn_name: Option<String>,
+    pub bn_tag: Option<String>,
+    pub last_played: Option<DateTime>,
 
-    pub(crate) ranks: HashMap<Role, Rating>,
-    pub(crate) flex: bool,
-    pub(crate) priority_roles: Vec<Option<Role>>,
+    pub ranks: HashMap<Role, Rating>,
+    pub flex: bool,
+    pub priority_roles: Vec<Option<Role>>,
 }
-
 
 impl Player {
     pub fn new(model: Model) -> Self {
@@ -24,55 +28,48 @@ impl Player {
             discord_id: UserId::from(model.discord_id as u64),
             bn_name: model.bn_name,
             bn_tag: model.bn_tag,
+            last_played: model.last_played,
 
             ranks: vec![
-                (Role::Tank, Rating::new(model.tank_rating, model.tank_rd, model.tank_volatility)),
-                (Role::Dps, Rating::new(model.dps_rating, model.dps_rd, model.dps_volatility)),
-                (Role::Support, Rating::new(model.support_rating, model.support_rd, model.support_volatility))
-            ].into_iter().collect(),
+                (
+                    Role::Tank,
+                    Rating::new(model.tank_rating, model.tank_rd, model.tank_volatility),
+                ),
+                (
+                    Role::DPS,
+                    Rating::new(model.dps_rating, model.dps_rd, model.dps_volatility),
+                ),
+                (
+                    Role::Support,
+                    Rating::new(
+                        model.support_rating,
+                        model.support_rd,
+                        model.support_volatility,
+                    ),
+                ),
+            ]
+            .into_iter()
+            .collect(),
 
             flex: model.flex,
             priority_roles: vec![
                 model.primary_role,
-                model.secondary_role, model.tertiary_role
-            ].into_iter().map(|role| {
-                match role {
-                    -1 => None,
-                    _ => Some(Role::from(role))
-                }
-            }).collect()
-        }
-    }
-
-    pub fn to_model(self) -> Model {
-        Model {
-            id: self.id,
-            discord_id: self.discord_id.0 as i64,
-            bn_name: self.bn_name,
-            bn_tag: self.bn_tag,
-            tank_rating: self.ranks.get(&Role::Tank).unwrap().value,
-            tank_rd: self.ranks.get(&Role::Tank).unwrap().rd,
-            tank_volatility: self.ranks.get(&Role::Tank).unwrap().volatility,
-            dps_rating: self.ranks.get(&Role::Dps).unwrap().value,
-            dps_rd: self.ranks.get(&Role::Dps).unwrap().rd,
-            dps_volatility: self.ranks.get(&Role::Dps).unwrap().volatility,
-            support_rating: self.ranks.get(&Role::Support).unwrap().value,
-            support_rd: self.ranks.get(&Role::Support).unwrap().rd,
-            support_volatility: self.ranks.get(&Role::Support).unwrap().volatility,
-            flex: self.flex,
-            primary_role: Role::option_to_i32(self.priority_roles.get(0).unwrap().clone()),
-            secondary_role: Role::option_to_i32(self.priority_roles.get(1).unwrap().clone()),
-            tertiary_role: Role::option_to_i32(self.priority_roles.get(2).unwrap().clone()),
+                model.secondary_role,
+                model.tertiary_role,
+            ],
         }
     }
 
     pub fn base_priority(&self) -> HashMap<Role, f32> {
         let mut priorities = HashMap::new();
-        let priority_points = 100.0;
+        let time = self.last_played.unwrap_or(Utc::now().naive_utc());
+        let time_since = (Utc::now().naive_utc() - time).num_minutes() as f32;
+        let priority_points = 100.0 + (time_since / 5.0).powf(1.5);
 
         if self.flex {
+            let role_count = Role::iter().count();
             for role in Role::iter() {
-                priorities.insert(role, 1.5 * (priority_points / (Role::iter().count()) as f32));
+                priorities.insert(role, 1.5 * (priority_points / role_count as f32));
             }
 
             return priorities;
