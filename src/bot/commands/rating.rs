@@ -26,7 +26,7 @@ impl MixerCommand for RatingCommand {
     fn create(&self, command: &mut CreateApplicationCommand) {
         command
             .name(self.name())
-            .description("")
+            .description("Set user's rating on specific role")
             .create_option(|option| {
                 option
                     .name("set")

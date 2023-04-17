@@ -40,7 +40,17 @@ impl EventHandler for MixerBot {
     async fn ready(&self, ctx: Context, data_about_bot: Ready) {
         info!("{} is connected!", data_about_bot.user.name);
 
-        Command::set_global_application_commands(&ctx.http, |commands| {
+        let commands = Command::get_global_application_commands(&ctx)
+            .await
+            .unwrap();
+
+        for command in commands {
+            Command::delete_global_application_command(&ctx, command.id)
+                .await
+                .unwrap();
+        }
+
+        Command::set_global_application_commands(ctx, |commands| {
             self.command_handler.create_all(commands);
             commands
         })
