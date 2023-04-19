@@ -14,3 +14,7 @@ shuttle-secrets = "*"
 shuttle-serenity = "*"
 shuttle-runtime = "*"
 shuttle-shared-db = { version = "*", features = ["postgres"] }
+
+rusttype = "*"
+image = "*"
+imageproc = "*"

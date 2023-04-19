@@ -1,20 +1,20 @@
 use itertools::Itertools;
 use serenity::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateEmbed};
+use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 use serenity::futures::future::join_all;
 use serenity::futures::StreamExt;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::component::ButtonStyle;
-use serenity::model::application::interaction::message_component::MessageComponentInteraction;
 use serenity::model::application::interaction::{
     application_command::ApplicationCommandInteraction, InteractionResponseType,
 };
 use serenity::model::channel::{ChannelType, PermissionOverwrite, PermissionOverwriteType};
 use serenity::model::id::{ChannelId, RoleId, UserId};
+use serenity::model::prelude::{AttachmentType, GuildId, Message};
 use serenity::model::Permissions;
-use serenity::utils::Colour;
 use sqlx::types::chrono::Utc;
+use std::borrow::Cow;
 use std::time::Duration;
 
 use crate::bot::commands::MixerCommand;
@@ -22,6 +22,7 @@ use crate::database::models::lobby::Model;
 use crate::database::models::role::Role;
 use crate::database::queries::prelude::*;
 use crate::database::DatabaseContainer;
+use crate::image_manipulation::ImageGeneratorContainer;
 use crate::mixer::mixer;
 use crate::mixer::player::Player;
 use crate::mixer::team::Team;
@@ -246,7 +247,6 @@ impl LobbyCommand {
 
         let members = main_channel.members(ctx).await?;
         let users = members.iter().map(|m| m.user.id).collect::<Vec<UserId>>();
-
         let players = PlayerQuery::players_by_user_ids(db.connection(), users).await;
 
         let players = match players {
@@ -336,10 +336,35 @@ impl LobbyCommand {
         let team1_names = join_all(team1_names).await;
         let team2_names = join_all(team2_names).await;
 
-        interaction
-            .edit_original_interaction_response(ctx, |response| {
-                response
-                    .content("")
+        let image_data = {
+            let data = ctx.data.read().await;
+            let image_gen = data.get::<ImageGeneratorContainer>().unwrap();
+
+            let player_names = team1_names
+                .into_iter()
+                .chain(team2_names.into_iter())
+                .collect_vec();
+
+            let team1_rank = team1.average_rating(&players);
+            let team2_rank = team2.average_rating(&players);
+
+            image_gen.draw_teams_to_png(
+                player_names,
+                [team1_rank.value as i32, team2_rank.value as i32],
+            )
+        };
+
+        let attachment = AttachmentType::Bytes {
+            data: Cow::Owned(image_data),
+            filename: "teams.png".to_string(),
+        };
+
+        let msg = interaction
+            .channel_id
+            .send_message(ctx, |message| {
+                message
+                    .content(format!("<@{}>", interaction.user.id.0))
+                    .add_file(attachment)
                     .components(|components| {
                         components.create_action_row(|row| {
                             row.create_button(|button| {
@@ -363,42 +388,45 @@ impl LobbyCommand {
                             })
                         })
                     })
-                    .embed(|embed| {
-                        embed
-                            .title("Teams")
-                            .fields(vec![
-                                ("Team 1", "", false),
-                                ("Tank", &team1_names[0], true),
-                                (
-                                    "Dps",
-                                    &format!("{}\n{}", team1_names[1], team1_names[2]),
-                                    true,
-                                ),
-                                (
-                                    "Support",
-                                    &format!("{}\n{}", team1_names[3], team1_names[4]),
-                                    true,
-                                ),
-                                ("Team 2", "", false),
-                                ("Tank", &team2_names[0], true),
-                                (
-                                    "Dps",
-                                    &format!("{}\n{}", team2_names[1], team2_names[2]),
-                                    true,
-                                ),
-                                (
-                                    "Support",
-                                    &format!("{}\n{}", team2_names[3], team2_names[4]),
-                                    true,
-                                ),
-                            ])
-                            .colour(Colour::new(0xcfa22f))
-                    })
             })
-            .await
-            .unwrap();
+            .await?;
 
-        let msg = interaction.get_interaction_response(ctx).await.unwrap();
+        interaction
+            .delete_original_interaction_response(ctx)
+            .await?;
+
+        // interaction
+        //     .edit_original_interaction_response(ctx, |response| {
+        //         response
+        //             .content("")
+        //             .components(|components| {
+        //                 components.create_action_row(|row| {
+        //                     row.create_button(|button| {
+        //                         button
+        //                             .custom_id("cancel")
+        //                             .label("Cancel")
+        //                             .style(ButtonStyle::Danger)
+        //                     });
+        //                     row.create_button(|button| {
+        //                         button
+        //                             .custom_id("swap")
+        //                             .label("Swap")
+        //                             .disabled(true)
+        //                             .style(ButtonStyle::Primary)
+        //                     });
+        //                     row.create_button(|button| {
+        //                         button
+        //                             .custom_id("start")
+        //                             .label("Start")
+        //                             .style(ButtonStyle::Success)
+        //                     })
+        //                 })
+        //             })
+        //     })
+        //     .await
+        //     .unwrap();
+
+        // let msg = interaction.get_interaction_response(ctx).await.unwrap();
         let collector = msg
             .await_component_interactions(ctx)
             .timeout(Duration::from_secs(10 * 60))
@@ -412,23 +440,29 @@ impl LobbyCommand {
         if let Some(interaction) = interactions.first() {
             match interaction.data.custom_id.as_str() {
                 "start" => {
-                    self.process_valid_teams_start(ctx, interaction, lobby, &team1, &team2, players)
-                        .await?
+                    self.process_valid_teams_start(
+                        ctx,
+                        lobby,
+                        &team1,
+                        &team2,
+                        players,
+                        interaction.user.id,
+                        msg,
+                    )
+                    .await?
                 }
                 "cancel" => {
-                    self.process_valid_teams_cancel(ctx, interaction, &team1, &team2)
+                    self.process_valid_teams_cancel(ctx, &team1, &team2, msg)
                         .await?
                 }
                 "swap" => {
-                    self.process_valid_teams_swap(ctx, interaction, &team1, &team2)
+                    self.process_valid_teams_swap(ctx, &team1, &team2, msg)
                         .await?
                 }
                 _ => {}
             }
         } else {
-            interaction
-                .delete_original_interaction_response(ctx)
-                .await?;
+            msg.delete(ctx).await?;
         }
 
         Ok(())
@@ -437,11 +471,12 @@ impl LobbyCommand {
     async fn process_valid_teams_start(
         &self,
         ctx: &Context,
-        interaction: &MessageComponentInteraction,
         lobby: Model,
         team1: &Team,
         team2: &Team,
         players: Vec<Player>,
+        author: UserId,
+        mut message: Message,
     ) -> serenity::Result<()> {
         let main_channel = ChannelId::from(lobby.main_voice_id as u64)
             .to_channel(ctx)
@@ -470,59 +505,49 @@ impl LobbyCommand {
                 .iter()
                 .any(|(_, i)| *i == index && index.is_some())
             {
-                member.move_to_voice_channel(ctx, red_channel.id).await?;
+                member.move_to_voice_channel(ctx, blue_channel.id).await?;
             } else if team2
                 .players
                 .iter()
                 .any(|(_, i)| *i == index && index.is_some())
             {
-                member.move_to_voice_channel(ctx, blue_channel.id).await?;
+                member.move_to_voice_channel(ctx, red_channel.id).await?;
             }
         }
 
-        let embed = interaction.message.embeds.get(0).unwrap();
-        interaction
-            .delete_original_interaction_response(ctx)
-            .await?;
-
-        // create msg without interaction
-        let msg = interaction
-            .channel_id
-            .send_message(ctx, |message| {
-                message
-                    .content(format!("<@{}>", interaction.user.id.0))
-                    .set_embeds(vec![CreateEmbed::from(embed.clone())])
-                    .components(|components| {
-                        components
-                            .create_action_row(|row| {
-                                row.create_button(|button| {
-                                    button
-                                        .custom_id("win_team1")
-                                        .label("Team 1 win")
-                                        .style(ButtonStyle::Success)
-                                })
-                                .create_button(|button| {
-                                    button
-                                        .custom_id("draw")
-                                        .label("Draw")
-                                        .style(ButtonStyle::Secondary)
-                                })
-                                .create_button(|button| {
-                                    button
-                                        .custom_id("win_team2")
-                                        .label("Team 2 win")
-                                        .style(ButtonStyle::Success)
-                                })
+        message
+            .edit(ctx, |message| {
+                message.components(|components| {
+                    components
+                        .create_action_row(|row| {
+                            row.create_button(|button| {
+                                button
+                                    .custom_id("win_team1")
+                                    .label("Team 1 win")
+                                    .style(ButtonStyle::Success)
                             })
-                            .create_action_row(|row| {
-                                row.create_button(|button| {
-                                    button
-                                        .custom_id("cancel")
-                                        .label("Cancel game")
-                                        .style(ButtonStyle::Danger)
-                                })
+                            .create_button(|button| {
+                                button
+                                    .custom_id("draw")
+                                    .label("Draw")
+                                    .style(ButtonStyle::Secondary)
                             })
-                    })
+                            .create_button(|button| {
+                                button
+                                    .custom_id("win_team2")
+                                    .label("Team 2 win")
+                                    .style(ButtonStyle::Success)
+                            })
+                        })
+                        .create_action_row(|row| {
+                            row.create_button(|button| {
+                                button
+                                    .custom_id("cancel")
+                                    .label("Cancel game")
+                                    .style(ButtonStyle::Danger)
+                            })
+                        })
+                })
             })
             .await?;
 
@@ -552,12 +577,12 @@ impl LobbyCommand {
         //     })
         // }).await?;
 
-        let collector = msg
+        let collector = message
             .await_component_interactions(ctx)
             .timeout(Duration::from_secs(30 * 60))
-            .guild_id(interaction.guild_id.unwrap())
-            .channel_id(interaction.channel_id)
-            .author_id(interaction.user.id)
+            .guild_id(GuildId::from(lobby.guild_id as u64))
+            .channel_id(message.channel_id)
+            .author_id(author)
             .collect_limit(1)
             .build();
 
@@ -569,7 +594,7 @@ impl LobbyCommand {
                 "draw" => score = 0.5,
                 "win_team2" => score = 0.0,
                 "cancel" => {
-                    return msg.delete(ctx).await;
+                    return message.delete(ctx).await;
                     // return interaction.delete_original_interaction_response(ctx).await;
                 }
                 _ => {}
@@ -646,25 +671,25 @@ impl LobbyCommand {
             drop(data);
         }
 
-        msg.delete(ctx).await
+        message.delete(ctx).await
     }
 
     async fn process_valid_teams_cancel(
         &self,
         ctx: &Context,
-        interaction: &MessageComponentInteraction,
         team1: &Team,
         team2: &Team,
+        message: Message,
     ) -> serenity::Result<()> {
-        interaction.delete_original_interaction_response(ctx).await
+        message.delete(ctx).await
     }
 
     async fn process_valid_teams_swap(
         &self,
         ctx: &Context,
-        interaction: &MessageComponentInteraction,
         team1: &Team,
         team2: &Team,
+        message: Message,
     ) -> serenity::Result<()> {
         Ok(())
     }
