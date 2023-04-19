@@ -42,7 +42,7 @@ fn get_combinations(entries: &[PlayerRoleEntry], count: usize) -> Vec<Vec<&Playe
         .sorted_by(|a, b| {
             let a = a.iter().map(|e| e.priority).sum::<f32>();
             let b = b.iter().map(|e| e.priority).sum::<f32>();
-            a.partial_cmp(&b).unwrap_or(Ordering::Equal)
+            b.partial_cmp(&a).unwrap_or(Ordering::Equal)
         })
         .collect_vec()
 }
