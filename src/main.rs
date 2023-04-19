@@ -2,8 +2,11 @@ mod algorithm;
 mod bot;
 mod database;
 mod mixer;
+mod image_manipulation;
 
 use bot::commands::creator::CreatorCommand;
+use image_manipulation::{ImageGenerator, ImageGeneratorContainer};
+use rusttype::Font;
 use serenity::model::prelude::UserId;
 use serenity::prelude::{GatewayIntents, TypeMapKey};
 use serenity::Client;
@@ -74,6 +77,13 @@ async fn serenity(
                 .unwrap(),
         );
         data.insert::<CreatorContainer>(Arc::new(creator));
+
+        let image_generator = ImageGenerator {
+            player_font: Font::try_from_bytes(include_bytes!("../assets/fonts/big-noodle-too-oblique.ttf")).unwrap(),
+            text_font: Font::try_from_bytes(include_bytes!("../assets/fonts/big-noodle-titling.ttf")).unwrap(),
+            teams_image: image::load_from_memory(include_bytes!("../assets/images/teams.png")).unwrap().to_rgb8()
+        };
+        data.insert::<ImageGeneratorContainer>(Arc::new(image_generator));
     }
 
     let shard_manager = client.shard_manager.clone();
