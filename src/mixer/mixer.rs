@@ -5,6 +5,7 @@ use crate::database::models::role::Role;
 use crate::mixer::player::Player;
 use crate::mixer::team::Team;
 
+#[derive(Debug)]
 struct PlayerRoleEntry {
     pub index: usize,
     pub role: Role,
@@ -64,7 +65,7 @@ pub fn mix_players(players: &[Player], slots: Vec<Role>) -> Option<(Team, Team)>
     let mut best_team2 = None;
     let mut best_diff = None;
 
-    let threshold = 100.0;
+    let threshold = 150.0;
 
     // this is awful, but it works
     for tank1_combo in &tank_combos {
@@ -192,7 +193,7 @@ pub fn mix_players(players: &[Player], slots: Vec<Role>) -> Option<(Team, Team)>
                                 .abs();
                             let diff = diff_rating;
 
-                            if diff + threshold < best_diff.unwrap_or(f32::MAX) {
+                            if diff < best_diff.unwrap_or(f32::MAX) {
                                 if diff < threshold {
                                     return Some((team1, team2));
                                 }
