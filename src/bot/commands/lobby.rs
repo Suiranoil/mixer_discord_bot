@@ -401,7 +401,7 @@ impl LobbyCommand {
         let msg = interaction.get_interaction_response(ctx).await.unwrap();
         let collector = msg
             .await_component_interactions(ctx)
-            .timeout(Duration::from_secs(2 * 60))
+            .timeout(Duration::from_secs(10 * 60))
             .guild_id(interaction.guild_id.unwrap())
             .channel_id(interaction.channel_id)
             .author_id(interaction.user.id)

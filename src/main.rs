@@ -31,7 +31,7 @@ impl TypeMapKey for CreatorContainer {
 #[shuttle_runtime::main]
 async fn serenity(
     #[shuttle_shared_db::Postgres(
-        local_uri = "postgres://postgres:{secrets.PASSWORD}@localhost:5432/postgres"
+        // local_uri = "postgres://postgres:{secrets.PASSWORD}@localhost:5432/postgres"
     )]
     pool: PgPool,
     #[shuttle_secrets::Secrets] secret_store: SecretStore,

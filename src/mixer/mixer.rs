@@ -41,7 +41,7 @@ fn get_combinations(entries: &[PlayerRoleEntry], count: usize) -> Vec<Vec<&Playe
         .sorted_by(|a, b| {
             let a = a.iter().map(|e| e.priority).sum::<f32>();
             let b = b.iter().map(|e| e.priority).sum::<f32>();
-            a.partial_cmp(&b).unwrap_or(Ordering::Equal)
+            b.partial_cmp(&a).unwrap_or(Ordering::Equal)
         })
         .collect_vec()
 }
@@ -64,7 +64,7 @@ pub fn mix_players(players: &[Player], slots: Vec<Role>) -> Option<(Team, Team)>
     let mut best_team2 = None;
     let mut best_diff = None;
 
-    let threshold = 100.0;
+    let threshold = 300.0;
 
     // this is awful, but it works
     for tank1_combo in &tank_combos {
