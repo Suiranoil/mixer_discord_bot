@@ -25,7 +25,7 @@ pub struct MixerBot {
 impl MixerBot {
     pub fn new() -> Self {
         Self {
-            command_handler: MixerCommandHandler::new(HashMap::new()),
+            command_handler: MixerCommandHandler::new(),
         }
     }
 

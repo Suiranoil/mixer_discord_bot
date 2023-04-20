@@ -12,8 +12,10 @@ pub struct MixerCommandHandler {
 }
 
 impl MixerCommandHandler {
-    pub fn new(commands: HashMap<String, Box<dyn MixerCommand>>) -> Self {
-        Self { commands }
+    pub fn new() -> Self {
+        Self {
+            commands: HashMap::new(),
+        }
     }
 
     pub fn add_command<T: MixerCommand + 'static>(&mut self, command: T) {
