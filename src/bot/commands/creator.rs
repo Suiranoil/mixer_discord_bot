@@ -24,7 +24,7 @@ impl MixerCommand for CreatorCommand {
     fn create(&self, command: &mut CreateApplicationCommand) {
         command
             .name(self.name())
-            .description("Hello world!")
+            .description("Some handful commands for the bot's creator!")
             .create_option(|option| {
                 option
                     .name("verify")
