@@ -54,7 +54,7 @@ impl MixerCommand for CreatorCommand {
 
         if !has_permission {
             interaction
-                .create_interaction_response(&ctx.http, |response| {
+                .create_interaction_response(ctx, |response| {
                     response
                         .kind(InteractionResponseType::ChannelMessageWithSource)
                         .interaction_response_data(|message| {
@@ -105,7 +105,7 @@ impl CreatorCommand {
         }
 
         interaction
-            .create_interaction_response(&ctx.http, |response| {
+            .create_interaction_response(ctx, |response| {
                 response
                     .kind(InteractionResponseType::ChannelMessageWithSource)
                     .interaction_response_data(|message| {

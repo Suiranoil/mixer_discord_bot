@@ -49,7 +49,7 @@ impl MixerCommandHandler {
                 interaction.user.name, interaction.user.id, interaction.data.name
             );
             interaction
-                .create_interaction_response(&ctx.http, |response| {
+                .create_interaction_response(ctx, |response| {
                     response
                         .kind(InteractionResponseType::ChannelMessageWithSource)
                         .interaction_response_data(|message| {

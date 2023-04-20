@@ -123,7 +123,7 @@ impl EventHandler for MixerBot {
             }
             Interaction::MessageComponent(component) => {
                 component
-                    .create_interaction_response(ctx.http(), |response| {
+                    .create_interaction_response(ctx, |response| {
                         response.kind(InteractionResponseType::DeferredUpdateMessage)
                     })
                     .await

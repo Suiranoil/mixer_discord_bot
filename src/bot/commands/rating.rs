@@ -83,7 +83,7 @@ impl MixerCommand for RatingCommand {
                     User(user, _) => user,
                     _ => {
                         interaction
-                            .create_interaction_response(&ctx.http, |response| {
+                            .create_interaction_response(ctx, |response| {
                                 response
                                     .kind(InteractionResponseType::ChannelMessageWithSource)
                                     .interaction_response_data(|message| {
