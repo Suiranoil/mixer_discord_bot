@@ -122,7 +122,7 @@ impl MixerCommand for PreferenceCommand {
                         response
                             .kind(InteractionResponseType::ChannelMessageWithSource)
                             .interaction_response_data(|message| {
-                                message.content(format!("User not found")).ephemeral(true)
+                                message.content("User not found").ephemeral(true)
                             })
                     })
                     .await?;

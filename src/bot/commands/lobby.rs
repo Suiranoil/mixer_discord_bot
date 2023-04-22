@@ -254,7 +254,7 @@ impl LobbyCommand {
             None => {
                 interaction
                     .edit_original_interaction_response(ctx, |response| {
-                        response.content(format!("Failed to get players"))
+                        response.content("Failed to get players")
                     })
                     .await?;
                 return Ok(());

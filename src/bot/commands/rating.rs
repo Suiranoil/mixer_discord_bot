@@ -87,7 +87,7 @@ impl MixerCommand for RatingCommand {
                                 response
                                     .kind(InteractionResponseType::ChannelMessageWithSource)
                                     .interaction_response_data(|message| {
-                                        message.content(format!("User not found")).ephemeral(true)
+                                        message.content("User not found").ephemeral(true)
                                     })
                             })
                             .await?;
@@ -133,7 +133,7 @@ impl MixerCommand for RatingCommand {
                                 .kind(InteractionResponseType::ChannelMessageWithSource)
                                 .interaction_response_data(|message| {
                                     message
-                                        .content(format!("Rank must be between 1 and 5000"))
+                                        .content("Rank must be between 1 and 5000")
                                         .ephemeral(true)
                                 })
                         })
