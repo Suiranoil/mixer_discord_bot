@@ -6,7 +6,7 @@ pub enum Role {
     #[sea_orm(string_value = "tank")]
     Tank,
     #[sea_orm(string_value = "dps")]
-    DPS,
+    Dps,
     #[sea_orm(string_value = "support")]
     Support,
 }
@@ -15,7 +15,7 @@ impl From<Role> for String {
     fn from(role: Role) -> Self {
         match role {
             Role::Tank => "tank".to_string(),
-            Role::DPS => "dps".to_string(),
+            Role::Dps => "dps".to_string(),
             Role::Support => "support".to_string(),
         }
     }
@@ -27,7 +27,7 @@ impl TryFrom<&str> for Role {
     fn try_from(role: &str) -> Result<Self, Self::Error> {
         match role {
             "tank" => Ok(Role::Tank),
-            "dps" => Ok(Role::DPS),
+            "dps" => Ok(Role::Dps),
             "support" => Ok(Role::Support),
             _ => Err(()),
         }
@@ -38,7 +38,7 @@ impl From<Role> for i32 {
     fn from(role: Role) -> Self {
         match role {
             Role::Tank => 0,
-            Role::DPS => 1,
+            Role::Dps => 1,
             Role::Support => 2,
         }
     }

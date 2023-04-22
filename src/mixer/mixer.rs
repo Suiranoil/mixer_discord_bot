@@ -30,7 +30,7 @@ fn get_role_entries(
     let (tanks, rest) = entries
         .into_iter()
         .partition::<Vec<_>, _>(|e| e.role == Role::Tank);
-    let (dps, supports) = rest.into_iter().partition(|e| e.role == Role::DPS);
+    let (dps, supports) = rest.into_iter().partition(|e| e.role == Role::Dps);
 
     (tanks, dps, supports)
 }
@@ -55,7 +55,7 @@ pub fn mix_players(players: &[Player], slots: Vec<Role>) -> Option<(Team, Team)>
 
     let tank_count = slots.iter().filter(|r| **r == Role::Tank).count();
     let support_count = slots.iter().filter(|r| **r == Role::Support).count();
-    let dps_count = slots.iter().filter(|r| **r == Role::DPS).count();
+    let dps_count = slots.iter().filter(|r| **r == Role::Dps).count();
 
     let tank_combos = get_combinations(&tanks, tank_count);
     let dps_combos = get_combinations(&dps, dps_count);

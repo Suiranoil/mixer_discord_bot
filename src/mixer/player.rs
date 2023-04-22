@@ -36,7 +36,7 @@ impl Player {
                     Rating::new(model.tank_rating, model.tank_rd, model.tank_volatility),
                 ),
                 (
-                    Role::DPS,
+                    Role::Dps,
                     Rating::new(model.dps_rating, model.dps_rd, model.dps_volatility),
                 ),
                 (

@@ -267,8 +267,8 @@ impl LobbyCommand {
             .collect::<Vec<Player>>();
         let slots = vec![
             Role::Tank,
-            Role::DPS,
-            Role::DPS,
+            Role::Dps,
+            Role::Dps,
             Role::Support,
             Role::Support,
         ];
