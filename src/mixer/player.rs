@@ -77,7 +77,7 @@ impl Player {
 
         for (i, role) in self.priority_roles.iter().enumerate() {
             if let Some(role) = role {
-                priorities.insert(role.clone(), priority_points / (i + 1) as f32);
+                priorities.insert(*role, priority_points / (i + 1) as f32);
             }
         }
 

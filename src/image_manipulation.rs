@@ -1,8 +1,8 @@
-use image::{codecs::png, ImageEncoder};
+use image::ImageOutputFormat;
 use imageproc::drawing::text_size;
 use rusttype::{Font, Scale};
 use serenity::prelude::TypeMapKey;
-use std::{io::BufWriter, sync::Arc};
+use std::{io::Cursor, sync::Arc};
 
 pub struct ImageGenerator<'a> {
     pub player_font: Font<'a>,
@@ -11,7 +11,7 @@ pub struct ImageGenerator<'a> {
 }
 
 impl<'a> ImageGenerator<'a> {
-    pub fn draw_teams_to_png(&self, player_names: Vec<String>, teams_rating: [i32; 2]) -> Vec<u8> {
+    pub fn draw_teams_to_vec(&self, player_names: Vec<String>, teams_rating: [i32; 2], format: ImageOutputFormat) -> Vec<u8> {
         let mut image: image::ImageBuffer<image::Rgb<u8>, Vec<u8>> = self.teams_image.clone();
 
         let player_text_scale = Scale::uniform(60.0);
@@ -47,8 +47,8 @@ impl<'a> ImageGenerator<'a> {
         }
 
         let rating_text_scale = Scale::uniform(86.5);
-        for i in 0..2 {
-            let rating = teams_rating[i].to_string();
+        for (i, rating) in teams_rating.iter().enumerate() {
+            let rating = rating.to_string();
 
             let size = text_size(rating_text_scale, &self.player_font, &rating);
             imageproc::drawing::draw_text_mut(
@@ -62,16 +62,11 @@ impl<'a> ImageGenerator<'a> {
             );
         }
 
-        let mut buf = BufWriter::new(Vec::new());
-        png::PngEncoder::new(&mut buf)
-            .write_image(
-                image.as_raw(),
-                image.width(),
-                image.height(),
-                image::ColorType::Rgb8,
-            )
-            .unwrap();
-        buf.into_inner().unwrap()
+        
+        let mut buf = Cursor::new(Vec::new());
+        image.write_to(&mut buf, format).unwrap();
+
+        buf.into_inner()
     }
 }
 

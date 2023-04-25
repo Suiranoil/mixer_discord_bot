@@ -47,7 +47,7 @@ impl Team {
     }
 
     pub fn count_role(&self, role: &Role) -> usize {
-        self.count_role.get(role).unwrap().clone()
+        *self.count_role.get(role).unwrap()
     }
 
     pub fn full_rating(&self, players: &[Player]) -> Rating {
@@ -55,7 +55,7 @@ impl Team {
             .iter()
             .map(|((role, _), index)| {
                 if let Some(index) = index {
-                    players[*index].ranks.get(role).unwrap().clone()
+                    *players[*index].ranks.get(role).unwrap()
                 } else {
                     Rating::zero()
                 }
@@ -77,7 +77,7 @@ impl Team {
             .filter(|((r, _), _)| r == role)
             .map(|((_, _), index)| {
                 if let Some(index) = index {
-                    players[*index].ranks.get(&role).unwrap().clone()
+                    *players[*index].ranks.get(role).unwrap()
                 } else {
                     Rating::zero()
                 }
