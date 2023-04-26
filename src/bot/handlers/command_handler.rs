@@ -12,8 +12,10 @@ pub struct MixerCommandHandler {
 }
 
 impl MixerCommandHandler {
-    pub fn new(commands: HashMap<String, Box<dyn MixerCommand>>) -> Self {
-        Self { commands }
+    pub fn new() -> Self {
+        Self {
+            commands: HashMap::new(),
+        }
     }
 
     pub fn add_command<T: MixerCommand + 'static>(&mut self, command: T) {
@@ -49,7 +51,7 @@ impl MixerCommandHandler {
                 interaction.user.name, interaction.user.id, interaction.data.name
             );
             interaction
-                .create_interaction_response(&ctx.http, |response| {
+                .create_interaction_response(ctx, |response| {
                     response
                         .kind(InteractionResponseType::ChannelMessageWithSource)
                         .interaction_response_data(|message| {

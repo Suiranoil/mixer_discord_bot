@@ -25,7 +25,7 @@ pub struct MixerBot {
 impl MixerBot {
     pub fn new() -> Self {
         Self {
-            command_handler: MixerCommandHandler::new(HashMap::new()),
+            command_handler: MixerCommandHandler::new(),
         }
     }
 
@@ -121,7 +121,7 @@ impl EventHandler for MixerBot {
             }
             Interaction::MessageComponent(component) => {
                 component
-                    .create_interaction_response(ctx.http(), |response| {
+                    .create_interaction_response(ctx, |response| {
                         response.kind(InteractionResponseType::DeferredUpdateMessage)
                     })
                     .await
