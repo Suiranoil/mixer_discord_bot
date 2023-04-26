@@ -307,7 +307,7 @@ impl LobbyCommand {
             .iter()
             .sorted_by(|((a, _), _), ((b, _), _)| i32::from(*a).cmp(&i32::from(*b)))
             .map(|(_, i)| async {
-                if let Some(user) = players[i.unwrap()].discord_id.to_user(ctx).await.ok() {
+                if let Ok(user) = players[i.unwrap()].discord_id.to_user(ctx).await {
                     user.name
                 } else {
                     players[i.unwrap()]
@@ -322,7 +322,7 @@ impl LobbyCommand {
             .iter()
             .sorted_by(|((a, _), _), ((b, _), _)| i32::from(*a).cmp(&i32::from(*b)))
             .map(|(_, i)| async {
-                if let Some(user) = players[i.unwrap()].discord_id.to_user(ctx).await.ok() {
+                if let Ok(user) = players[i.unwrap()].discord_id.to_user(ctx).await {
                     user.name
                 } else {
                     players[i.unwrap()]
