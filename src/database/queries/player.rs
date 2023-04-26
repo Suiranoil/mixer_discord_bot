@@ -73,7 +73,7 @@ impl Query {
                 player.tank_rd = Set(rating.rd);
                 player.tank_volatility = Set(rating.volatility);
             }
-            Role::DPS => {
+            Role::Dps => {
                 player.dps_rating = Set(rating.value);
                 player.dps_rd = Set(rating.rd);
                 player.dps_volatility = Set(rating.volatility);

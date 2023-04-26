@@ -79,8 +79,8 @@ impl SettingsCommand {
                 let roles: HashMap<_, _, RandomState> = HashMap::from_iter(
                     [
                         ("support", Role::Support),
-                        ("damage", Role::DPS),
-                        ("dps", Role::DPS),
+                        ("damage", Role::Dps),
+                        ("dps", Role::Dps),
                         ("tank", Role::Tank),
                     ]
                     .into_iter(),

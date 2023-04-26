@@ -44,7 +44,7 @@ impl MixerCommandHandler {
                 interaction.user.id,
                 command.name()
             );
-            return command.execute(&ctx, interaction).await;
+            return command.execute(ctx, interaction).await;
         } else {
             info!(
                 "User {} ({}) executed unknown command \"{}\"",

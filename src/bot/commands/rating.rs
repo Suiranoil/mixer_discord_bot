@@ -87,7 +87,7 @@ impl MixerCommand for RatingCommand {
                                 response
                                     .kind(InteractionResponseType::ChannelMessageWithSource)
                                     .interaction_response_data(|message| {
-                                        message.content(format!("User not found")).ephemeral(true)
+                                        message.content("User not found").ephemeral(true)
                                     })
                             })
                             .await?;
@@ -126,14 +126,14 @@ impl MixerCommand for RatingCommand {
                     .as_u64()
                     .unwrap();
 
-                if rating < 1 || rating > 5000 {
+                if !(1..=5000).contains(&rating) {
                     interaction
                         .create_interaction_response(ctx, |response| {
                             response
                                 .kind(InteractionResponseType::ChannelMessageWithSource)
                                 .interaction_response_data(|message| {
                                     message
-                                        .content(format!("Rank must be between 1 and 5000"))
+                                        .content("Rank must be between 1 and 5000")
                                         .ephemeral(true)
                                 })
                         })

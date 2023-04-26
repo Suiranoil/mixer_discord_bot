@@ -254,7 +254,7 @@ impl LobbyCommand {
             None => {
                 interaction
                     .edit_original_interaction_response(ctx, |response| {
-                        response.content(format!("Failed to get players"))
+                        response.content("Failed to get players")
                     })
                     .await?;
                 return Ok(());
@@ -263,12 +263,12 @@ impl LobbyCommand {
 
         let players = players
             .into_iter()
-            .map(|p| Player::new(p))
+            .map(Player::new)
             .collect::<Vec<Player>>();
         let slots = vec![
             Role::Tank,
-            Role::DPS,
-            Role::DPS,
+            Role::Dps,
+            Role::Dps,
             Role::Support,
             Role::Support,
         ];
@@ -307,7 +307,7 @@ impl LobbyCommand {
             .iter()
             .sorted_by(|((a, _), _), ((b, _), _)| i32::from(*a).cmp(&i32::from(*b)))
             .map(|(_, i)| async {
-                if let Some(user) = players[i.unwrap()].discord_id.to_user(ctx).await.ok() {
+                if let Ok(user) = players[i.unwrap()].discord_id.to_user(ctx).await {
                     user.name
                 } else {
                     players[i.unwrap()]
@@ -322,7 +322,7 @@ impl LobbyCommand {
             .iter()
             .sorted_by(|((a, _), _), ((b, _), _)| i32::from(*a).cmp(&i32::from(*b)))
             .map(|(_, i)| async {
-                if let Some(user) = players[i.unwrap()].discord_id.to_user(ctx).await.ok() {
+                if let Ok(user) = players[i.unwrap()].discord_id.to_user(ctx).await {
                     user.name
                 } else {
                     players[i.unwrap()]
@@ -348,9 +348,10 @@ impl LobbyCommand {
             let team1_rank = team1.average_rating(&players);
             let team2_rank = team2.average_rating(&players);
 
-            image_gen.draw_teams_to_png(
+            image_gen.draw_teams_to_vec(
                 player_names,
                 [team1_rank.value as i32, team2_rank.value as i32],
+                image::ImageOutputFormat::Png
             )
         };
 
@@ -607,25 +608,13 @@ impl LobbyCommand {
                 .players
                 .clone()
                 .into_iter()
-                .filter_map(|((role, _), player)| {
-                    if player.is_some() {
-                        Some((role, player.unwrap()))
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|((role, _), player)| player.map(|id| (role, id)))
                 .collect::<Vec<_>>();
             let team2 = team2
                 .players
                 .clone()
                 .into_iter()
-                .filter_map(|((role, _), player)| {
-                    if player.is_some() {
-                        Some((role, player.unwrap()))
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|((role, _), player)| player.map(|id| (role, id)))
                 .collect::<Vec<_>>();
 
             let data = ctx.data.read().await;
