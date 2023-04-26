@@ -608,25 +608,13 @@ impl LobbyCommand {
                 .players
                 .clone()
                 .into_iter()
-                .filter_map(|((role, _), player)| {
-                    if player.is_some() {
-                        Some((role, player.unwrap()))
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|((role, _), player)| player.map(|id| (role, id)))
                 .collect::<Vec<_>>();
             let team2 = team2
                 .players
                 .clone()
                 .into_iter()
-                .filter_map(|((role, _), player)| {
-                    if player.is_some() {
-                        Some((role, player.unwrap()))
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|((role, _), player)| player.map(|id| (role, id)))
                 .collect::<Vec<_>>();
 
             let data = ctx.data.read().await;
