@@ -64,7 +64,7 @@ impl Team {
     }
 
     pub fn average_rating(&self, players: &[Player]) -> Rating {
-        if self.players.len() == 0 {
+        if self.players.is_empty() {
             return Rating::zero();
         }
 
