@@ -126,7 +126,7 @@ impl MixerCommand for RatingCommand {
                     .as_u64()
                     .unwrap();
 
-                if rating < 1 || rating > 5000 {
+                if !(1..=5000).contains(&rating) {
                     interaction
                         .create_interaction_response(ctx, |response| {
                             response
