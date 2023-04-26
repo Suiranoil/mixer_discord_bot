@@ -64,9 +64,7 @@ impl EventHandler for MixerBot {
                 let data = ctx.data.read().await;
                 let db = data.get::<DatabaseContainer>().unwrap().read().await;
 
-                if let Some(_) =
-                    LobbyQuery::lobby_by_channel_id(db.connection(), guild_id, channel_id).await
-                {
+                if LobbyQuery::lobby_by_channel_id(db.connection(), guild_id, channel_id).await.is_some() {
                     if let Some(member) = new.member {
                         if member.user.bot {
                             return;
