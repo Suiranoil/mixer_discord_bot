@@ -263,7 +263,7 @@ impl LobbyCommand {
 
         let players = players
             .into_iter()
-            .map(|p| Player::new(p))
+            .map(Player::new)
             .collect::<Vec<Player>>();
         let slots = vec![
             Role::Tank,
