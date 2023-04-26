@@ -37,7 +37,7 @@ fn get_role_entries(
 
 fn get_combinations(entries: &[PlayerRoleEntry], count: usize) -> Vec<Vec<&PlayerRoleEntry>> {
     entries
-        .into_iter()
+        .iter()
         .combinations(count)
         .sorted_by(|a, b| {
             let a = a.iter().map(|e| e.priority).sum::<f32>();
