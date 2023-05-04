@@ -1,20 +1,6 @@
-[package]
-name = "mixer-discord-bot"
-version = "0.1.0"
-edition = "2021"
+[workspace]
 
-[dependencies]
-tokio = { version = "*", features = ["full"] }
-tracing = "*"
-serenity = {version = "*", default-features = false, features = ["rustls_backend", "client", "gateway", "model", "cache", "collector", "utils"] }
-sqlx = { version = "0.6.2", features = ["runtime-tokio-native-tls", "postgres"] }
-sea-orm = { version = "*", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
-itertools = "*"
-shuttle-secrets = "*"
-shuttle-serenity = "*"
-shuttle-runtime = "*"
-shuttle-shared-db = { version = "*", features = ["postgres"] }
-
-rusttype = "*"
-image = "*"
-imageproc = "*"
+members = [
+    "mixer-discord-bot"
+]
+default-members = ["mixer-discord-bot"]
