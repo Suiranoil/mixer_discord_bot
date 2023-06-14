@@ -4,17 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "*", features = ["full"] }
-tracing = "*"
-serenity = {version = "*", default-features = false, features = ["rustls_backend", "client", "gateway", "model", "cache", "collector", "utils"] }
-sqlx = { version = "0.6.2", features = ["runtime-tokio-native-tls", "postgres"] }
-sea-orm = { version = "*", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
-itertools = "*"
-shuttle-secrets = "*"
-shuttle-serenity = "*"
-shuttle-runtime = "*"
-shuttle-shared-db = { version = "*", features = ["postgres"] }
+tokio = { version = "1.28.2", features = ["full"] }
+tracing = "0.1.37"
+serenity = {version = "0.11.5", default-features = false, features = ["rustls_backend", "client", "gateway", "model", "cache", "collector", "utils"] }
+sqlx = { version = "0.6.3", features = ["runtime-tokio-rustls", "postgres"] }
+sea-orm = { version = "0.11.3", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
+itertools = "0.10.5"
+shuttle-secrets = "0.18.0"
+shuttle-serenity = "0.18.0"
+shuttle-runtime = "0.18.0"
+shuttle-shared-db = { version = "0.18.0", features = ["postgres-rustls"] }
 
-rusttype = "*"
-image = "*"
-imageproc = "*"
+rusttype = "0.9.3"
+image = "0.24.6"
+imageproc = "0.23.0"
