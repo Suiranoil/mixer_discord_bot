@@ -4,9 +4,9 @@ use serenity::model::id::UserId;
 use sqlx::types::chrono::Utc;
 use std::collections::HashMap;
 
-use crate::database::models::player::Model;
-use crate::database::models::role::Role;
 use crate::mixer::rating::Rating;
+use entity::players;
+use entity::prelude::Role;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Player {
@@ -22,7 +22,7 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(model: Model) -> Self {
+    pub fn new(model: players::Model) -> Self {
         Self {
             id: model.id,
             discord_id: UserId::from(model.discord_id as u64),

@@ -5,12 +5,14 @@ edition = "2021"
 
 [dependencies]
 migration = { path = "../migration" }
+entity = { path = "../entity" }
 
+tokio = { version = "1.29.1", features = ["full"] }
 tracing = "0.1.37"
-serenity = {version = "0.11.5", default-features = false, features = ["rustls_backend", "client", "gateway", "model", "cache", "collector", "utils"] }
+serenity = {version = "0.11.6", default-features = false, features = ["rustls_backend", "client", "gateway", "model", "cache", "collector", "utils"] }
 sqlx = { version = "0.6.3", features = ["runtime-tokio-rustls", "postgres"] }
 sea-orm = { version = "0.11.3", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
-itertools = "0.10.5"
+itertools = "0.11.0"
 shuttle-secrets = "0.20.0"
 shuttle-serenity = "0.20.0"
 shuttle-runtime = "0.20.0"

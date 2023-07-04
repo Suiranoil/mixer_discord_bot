@@ -3,8 +3,8 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::DatabaseConnection;
 use serenity::model::prelude::*;
 
-use crate::database::models::prelude::*;
-use crate::database::models::{self, lobby};
+use entity::lobbies;
+use entity::prelude::*;
 
 pub struct Query;
 
@@ -15,8 +15,8 @@ impl Query {
         main_voice_id: ChannelId,
         red_team_voice_id: ChannelId,
         blue_team_voice_id: ChannelId,
-    ) -> Option<lobby::Model> {
-        let lobby = models::lobby::ActiveModel {
+    ) -> Option<lobbies::Model> {
+        let lobby = lobbies::ActiveModel {
             guild_id: Set(guild_id.0 as i64),
             main_voice_id: Set(main_voice_id.0 as i64),
             red_team_voice_id: Set(red_team_voice_id.0 as i64),
@@ -33,14 +33,14 @@ impl Query {
         connection: &DatabaseConnection,
         guild_id: GuildId,
         channel_id: ChannelId,
-    ) -> Option<lobby::Model> {
+    ) -> Option<lobbies::Model> {
         Lobbies::find()
             .filter(
-                lobby::Column::GuildId.eq(guild_id.0 as i64).and(
-                    lobby::Column::MainVoiceId
+                lobbies::Column::GuildId.eq(guild_id.0 as i64).and(
+                    lobbies::Column::MainVoiceId
                         .eq(channel_id.0 as i64)
-                        .or(lobby::Column::RedTeamVoiceId.eq(channel_id.0 as i64))
-                        .or(lobby::Column::BlueTeamVoiceId.eq(channel_id.0 as i64)),
+                        .or(lobbies::Column::RedTeamVoiceId.eq(channel_id.0 as i64))
+                        .or(lobbies::Column::BlueTeamVoiceId.eq(channel_id.0 as i64)),
                 ),
             )
             .one(connection)

@@ -9,10 +9,10 @@ use serenity::model::prelude::command::CommandOptionType;
 use serenity::model::Permissions;
 
 use crate::bot::commands::MixerCommand;
-use crate::database::models::role::Role;
 use crate::database::queries::prelude::*;
 use crate::database::DatabaseContainer;
 use crate::mixer::rating::Rating;
+use entity::prelude::Role;
 
 #[derive(Clone)]
 pub struct RatingCommand;
@@ -163,7 +163,7 @@ impl MixerCommand for RatingCommand {
                                     .content(format!(
                                         "Setting rank for user <@{}> to {} {}",
                                         user.id,
-                                        String::from(role),
+                                        role,
                                         rating
                                     ))
                                     .allowed_mentions(|mentions| mentions.empty_users())

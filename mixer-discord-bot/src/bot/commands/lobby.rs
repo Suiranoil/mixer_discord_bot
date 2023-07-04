@@ -18,14 +18,14 @@ use std::borrow::Cow;
 use std::time::Duration;
 
 use crate::bot::commands::MixerCommand;
-use crate::database::models::lobby::Model;
-use crate::database::models::role::Role;
 use crate::database::queries::prelude::*;
 use crate::database::DatabaseContainer;
 use crate::image_manipulation::ImageGeneratorContainer;
 use crate::mixer::mixer;
 use crate::mixer::player::Player;
 use crate::mixer::team::Team;
+use entity::lobbies;
+use entity::prelude::Role;
 
 #[derive(Clone)]
 pub struct LobbyCommand;
@@ -296,7 +296,7 @@ impl LobbyCommand {
         &self,
         ctx: &Context,
         interaction: ApplicationCommandInteraction,
-        lobby: Model,
+        lobby: lobbies::Model,
         teams: (Team, Team),
         players: Vec<Player>,
     ) -> serenity::Result<()> {
@@ -305,7 +305,7 @@ impl LobbyCommand {
         let team1_names = team1
             .players
             .iter()
-            .sorted_by(|((a, _), _), ((b, _), _)| i32::from(*a).cmp(&i32::from(*b)))
+            .sorted_by(|((a, _), _), ((b, _), _)| i32::from(a).cmp(&i32::from(b)))
             .map(|(_, i)| async {
                 if let Ok(user) = players[i.unwrap()].discord_id.to_user(ctx).await {
                     user.name
@@ -320,7 +320,7 @@ impl LobbyCommand {
         let team2_names = team2
             .players
             .iter()
-            .sorted_by(|((a, _), _), ((b, _), _)| i32::from(*a).cmp(&i32::from(*b)))
+            .sorted_by(|((a, _), _), ((b, _), _)| i32::from(a).cmp(&i32::from(b)))
             .map(|(_, i)| async {
                 if let Ok(user) = players[i.unwrap()].discord_id.to_user(ctx).await {
                     user.name
@@ -472,7 +472,7 @@ impl LobbyCommand {
     async fn process_valid_teams_start(
         &self,
         ctx: &Context,
-        lobby: Model,
+        lobby: lobbies::Model,
         team1: &Team,
         team2: &Team,
         players: Vec<Player>,

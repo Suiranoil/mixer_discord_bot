@@ -1,9 +1,9 @@
 use itertools::Itertools;
 use std::cmp::Ordering;
 
-use crate::database::models::role::Role;
 use crate::mixer::player::Player;
 use crate::mixer::team::Team;
+use entity::prelude::Role;
 
 #[derive(Debug)]
 struct PlayerRoleEntry {

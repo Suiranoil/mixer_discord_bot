@@ -11,7 +11,7 @@ use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 
 use crate::bot::commands::MixerCommand;
-use crate::database::models::role::Role;
+use entity::prelude::Role;
 
 pub struct SettingsCommand;
 

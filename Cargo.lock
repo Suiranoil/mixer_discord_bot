@@ -1685,6 +1685,7 @@ dependencies = [
 name = "mixer-discord-bot"
 version = "0.1.0"
 dependencies = [
+ "entity",
  "image",
  "imageproc",
  "itertools 0.11.0",

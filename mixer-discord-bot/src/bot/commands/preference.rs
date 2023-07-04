@@ -9,9 +9,9 @@ use serenity::model::prelude::interaction::application_command::CommandDataOptio
 use serenity::model::Permissions;
 
 use crate::bot::commands::MixerCommand;
-use crate::database::models::role::Role;
 use crate::database::queries::prelude::*;
 use crate::database::DatabaseContainer;
+use entity::prelude::Role;
 
 #[derive(Clone)]
 pub struct PreferenceCommand;

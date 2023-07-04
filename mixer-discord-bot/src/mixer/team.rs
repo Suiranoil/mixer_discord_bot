@@ -1,9 +1,9 @@
 use sea_orm::Iterable;
 use std::collections::HashMap;
 
-use crate::database::models::role::Role;
 use crate::mixer::player::Player;
 use crate::mixer::rating::Rating;
+use entity::prelude::Role;
 
 #[derive(Debug, Clone)]
 pub struct Team {

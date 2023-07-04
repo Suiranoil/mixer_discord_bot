@@ -1,4 +1,3 @@
-pub mod models;
 pub mod queries;
 
 use sea_orm::{DatabaseConnection, SqlxPostgresConnector};

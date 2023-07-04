@@ -1,42 +1,34 @@
+use super::sea_orm_active_enums::Role;
 use sea_orm::entity::prelude::*;
 
-use super::role::Role;
-
-#[derive(Debug, Clone, PartialEq, DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "players")]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment)]
+    #[sea_orm(primary_key)]
     pub id: i32,
-
     #[sea_orm(unique)]
     pub discord_id: i64,
     pub bn_name: Option<String>,
     pub bn_tag: Option<String>,
-
     pub last_played: Option<DateTime>,
-
-    #[sea_orm(default_value = 2500.0)]
+    #[sea_orm(column_type = "Float")]
     pub tank_rating: f32,
-    #[sea_orm(default_value = 300.0)]
+    #[sea_orm(column_type = "Float")]
     pub tank_rd: f32,
-    #[sea_orm(default_value = 0.06)]
+    #[sea_orm(column_type = "Float")]
     pub tank_volatility: f32,
-
-    #[sea_orm(default_value = 2500.0)]
+    #[sea_orm(column_type = "Float")]
     pub dps_rating: f32,
-    #[sea_orm(default_value = 300.0)]
+    #[sea_orm(column_type = "Float")]
     pub dps_rd: f32,
-    #[sea_orm(default_value = 0.06)]
+    #[sea_orm(column_type = "Float")]
     pub dps_volatility: f32,
-
-    #[sea_orm(default_value = 2500.0)]
+    #[sea_orm(column_type = "Float")]
     pub support_rating: f32,
-    #[sea_orm(default_value = 300.0)]
+    #[sea_orm(column_type = "Float")]
     pub support_rd: f32,
-    #[sea_orm(default_value = 0.06)]
+    #[sea_orm(column_type = "Float")]
     pub support_volatility: f32,
-
-    #[sea_orm(default_value = true)]
     pub flex: bool,
     pub primary_role: Option<Role>,
     pub secondary_role: Option<Role>,

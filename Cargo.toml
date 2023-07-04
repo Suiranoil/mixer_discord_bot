@@ -2,5 +2,6 @@
 members = [
     "mixer-discord-bot",
     "migration",
+    "entity"
 ]
 default-members = ["mixer-discord-bot"]

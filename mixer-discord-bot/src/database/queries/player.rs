@@ -3,20 +3,23 @@ use sea_orm::prelude::*;
 use sea_orm::{DatabaseConnection, IntoActiveModel, Set};
 use serenity::model::prelude::UserId;
 
-use crate::database::models::player;
-use crate::database::models::role::Role;
 use crate::mixer::rating::Rating;
+use entity::players;
+use entity::prelude::*;
 
 pub struct Query;
 
 impl Query {
-    pub async fn create(connection: &DatabaseConnection, user_id: UserId) -> Option<player::Model> {
-        let player = player::ActiveModel {
+    pub async fn create(
+        connection: &DatabaseConnection,
+        user_id: UserId,
+    ) -> Option<players::Model> {
+        let player = players::ActiveModel {
             discord_id: Set(user_id.0 as i64),
             ..Default::default()
         };
 
-        player::Entity::insert(player).exec(connection).await.ok()?;
+        Players::insert(player).exec(connection).await.ok()?;
 
         Self::player_by_user_id(connection, user_id).await
     }
@@ -24,7 +27,7 @@ impl Query {
     pub async fn create_if_not_exists(
         connection: &DatabaseConnection,
         user_id: UserId,
-    ) -> Option<player::Model> {
+    ) -> Option<players::Model> {
         if let Some(player) = Self::player_by_user_id(connection, user_id).await {
             Some(player)
         } else {
@@ -35,9 +38,9 @@ impl Query {
     pub async fn player_by_user_id(
         connection: &DatabaseConnection,
         user_id: UserId,
-    ) -> Option<player::Model> {
-        player::Entity::find()
-            .filter(player::Column::DiscordId.eq(user_id.0 as i64))
+    ) -> Option<players::Model> {
+        Players::find()
+            .filter(players::Column::DiscordId.eq(user_id.0 as i64))
             .one(connection)
             .await
             .ok()?
@@ -46,10 +49,10 @@ impl Query {
     pub async fn players_by_user_ids(
         connection: &DatabaseConnection,
         user_ids: Vec<UserId>,
-    ) -> Option<Vec<player::Model>> {
-        player::Entity::find()
+    ) -> Option<Vec<players::Model>> {
+        Players::find()
             .filter(
-                player::Column::DiscordId
+                players::Column::DiscordId
                     .is_in(user_ids.iter().map(|id| id.0 as i64).collect_vec()),
             )
             .all(connection)
@@ -62,7 +65,7 @@ impl Query {
         user_id: UserId,
         role: Role,
         rating: Rating,
-    ) -> Option<player::Model> {
+    ) -> Option<players::Model> {
         let mut player = Self::player_by_user_id(connection, user_id)
             .await?
             .into_active_model();
@@ -85,7 +88,7 @@ impl Query {
             }
         }
 
-        player::Entity::update(player).exec(connection).await.ok()
+        Players::update(player).exec(connection).await.ok()
     }
 
     pub async fn update_preference(
@@ -95,7 +98,7 @@ impl Query {
         primary: Option<Role>,
         secondary: Option<Role>,
         tertiary: Option<Role>,
-    ) -> Option<player::Model> {
+    ) -> Option<players::Model> {
         let mut player = Self::player_by_user_id(connection, user_id)
             .await?
             .into_active_model();
@@ -105,20 +108,20 @@ impl Query {
         player.secondary_role = Set(secondary);
         player.tertiary_role = Set(tertiary);
 
-        player::Entity::update(player).exec(connection).await.ok()
+        Players::update(player).exec(connection).await.ok()
     }
 
     pub async fn update_last_played(
         connection: &DatabaseConnection,
         user_id: UserId,
         last_played: DateTime,
-    ) -> Option<player::Model> {
+    ) -> Option<players::Model> {
         let mut player = Self::player_by_user_id(connection, user_id)
             .await?
             .into_active_model();
 
         player.last_played = Set(Some(last_played));
 
-        player::Entity::update(player).exec(connection).await.ok()
+        Players::update(player).exec(connection).await.ok()
     }
 }
