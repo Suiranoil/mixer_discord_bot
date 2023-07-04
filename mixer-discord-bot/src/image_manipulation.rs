@@ -11,7 +11,12 @@ pub struct ImageGenerator<'a> {
 }
 
 impl<'a> ImageGenerator<'a> {
-    pub fn draw_teams_to_vec(&self, player_names: Vec<String>, teams_rating: [i32; 2], format: ImageOutputFormat) -> Vec<u8> {
+    pub fn draw_teams_to_vec(
+        &self,
+        player_names: Vec<String>,
+        teams_rating: [i32; 2],
+        format: ImageOutputFormat,
+    ) -> Vec<u8> {
         let mut image = self.teams_image.clone();
 
         let player_text_scale = Scale::uniform(60.0);
@@ -62,7 +67,6 @@ impl<'a> ImageGenerator<'a> {
             );
         }
 
-        
         let mut buf = Cursor::new(Vec::new());
         image.write_to(&mut buf, format).unwrap();
 

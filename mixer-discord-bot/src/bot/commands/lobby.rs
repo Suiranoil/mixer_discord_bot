@@ -351,7 +351,7 @@ impl LobbyCommand {
             image_gen.draw_teams_to_vec(
                 player_names,
                 [team1_rank.value as i32, team2_rank.value as i32],
-                image::ImageOutputFormat::Png
+                image::ImageOutputFormat::Png,
             )
         };
 
