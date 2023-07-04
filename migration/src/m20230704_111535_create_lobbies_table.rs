@@ -14,8 +14,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Lobbies::Id)
                             .integer()
                             .not_null()
-                            .auto_increment()
-                            .primary_key(),
+                            .auto_increment(),
                     )
                     .col(ColumnDef::new(Lobbies::GuildId).big_unsigned().not_null())
                     .col(
@@ -33,6 +32,7 @@ impl MigrationTrait for Migration {
                             .big_unsigned()
                             .not_null(),
                     )
+                    .primary_key(Index::create().name("lobbies_pkey").col(Lobbies::Id))
                     .to_owned(),
             )
             .await?;

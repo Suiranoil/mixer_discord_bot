@@ -14,8 +14,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Players::Id)
                             .integer()
                             .not_null()
-                            .auto_increment()
-                            .primary_key(),
+                            .auto_increment(),
                     )
                     .col(
                         ColumnDef::new(Players::DiscordId)
@@ -89,6 +88,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Players::PrimaryRole).custom(Role))
                     .col(ColumnDef::new(Players::SecondaryRole).custom(Role))
                     .col(ColumnDef::new(Players::TertiaryRole).custom(Role))
+                    .primary_key(Index::create().name("players_pkey").col(Players::Id))
                     .to_owned(),
             )
             .await?;

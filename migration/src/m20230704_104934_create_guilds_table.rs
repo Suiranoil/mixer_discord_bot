@@ -15,8 +15,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Guilds::Id)
                             .integer()
                             .not_null()
-                            .auto_increment()
-                            .primary_key(),
+                            .auto_increment(),
                     )
                     .col(
                         ColumnDef::new(Guilds::GuildId)
@@ -30,6 +29,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .default(false),
                     )
+                    .primary_key(Index::create().name("guilds_pkey").col(Guilds::Id))
                     .to_owned(),
             )
             .await?;
