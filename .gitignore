@@ -6,5 +6,5 @@ mixer_discord_bot.iml
 .vscode
 
 # Rust
-Secrets.toml
+Secrets*.toml
 target/
