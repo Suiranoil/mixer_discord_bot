@@ -1,5 +1,6 @@
 [workspace]
 members = [
-    "mixer-discord-bot"
+    "mixer-discord-bot",
+    "migration",
 ]
 default-members = ["mixer-discord-bot"]

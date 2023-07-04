@@ -6,13 +6,14 @@ mod mixer;
 
 use bot::commands::creator::CreatorCommand;
 use image_manipulation::{ImageGenerator, ImageGeneratorContainer};
+use migration::{Migrator, MigratorTrait};
 use rusttype::Font;
 use serenity::model::prelude::UserId;
 use serenity::prelude::{GatewayIntents, TypeMapKey};
 use serenity::Client;
 use shuttle_runtime::Context;
 use shuttle_secrets::SecretStore;
-use sqlx::{Executor, PgPool};
+use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::log::info;
@@ -46,8 +47,6 @@ async fn serenity(
         .get("DISCORD_APP_ID")
         .context("'DISCORD_APP_ID' was not found")?;
 
-    pool.execute(include_str!("../schema.sql")).await.unwrap();
-
     let mut bot = MixerBot::new();
 
     bot.add_command(PingCommand);
@@ -67,6 +66,9 @@ async fn serenity(
         let mut data = client.data.write().await;
 
         let db = MixerDatabase::new(pool);
+        Migrator::up(db.connection(), None)
+            .await
+            .expect("Could not run migrations");
         data.insert::<DatabaseContainer>(Arc::new(RwLock::new(db)));
 
         let creator = UserId::from(

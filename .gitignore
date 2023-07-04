@@ -1,6 +1,4 @@
-# Intellij Idea
-.idea
-mixer_discord_bot.iml
+.env
 
 # VSCode
 .vscode
