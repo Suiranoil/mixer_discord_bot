@@ -4,12 +4,10 @@ pub mod interactions;
 
 use serenity::async_trait;
 use serenity::client::{Context, EventHandler};
-use serenity::http::CacheHttp;
 use serenity::model::application::command::Command;
 use serenity::model::application::interaction::{Interaction, InteractionResponseType};
 use serenity::model::gateway::Ready;
 use serenity::model::prelude::VoiceState;
-use std::collections::HashMap;
 use tracing::log::info;
 
 use crate::bot::commands::MixerCommand;

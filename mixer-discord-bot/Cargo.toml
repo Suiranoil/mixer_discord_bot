@@ -10,10 +10,10 @@ serenity = {version = "0.11.5", default-features = false, features = ["rustls_ba
 sqlx = { version = "0.6.3", features = ["runtime-tokio-rustls", "postgres"] }
 sea-orm = { version = "0.11.3", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
 itertools = "0.10.5"
-shuttle-secrets = "0.18.0"
-shuttle-serenity = "0.18.0"
-shuttle-runtime = "0.18.0"
-shuttle-shared-db = { version = "0.18.0", features = ["postgres-rustls"] }
+shuttle-secrets = "0.19.0"
+shuttle-serenity = "0.19.0"
+shuttle-runtime = "0.19.0"
+shuttle-shared-db = { version = "0.19.0", features = ["postgres-rustls"] }
 
 rusttype = "0.9.3"
 image = "0.24.6"

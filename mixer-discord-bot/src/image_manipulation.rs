@@ -12,7 +12,7 @@ pub struct ImageGenerator<'a> {
 
 impl<'a> ImageGenerator<'a> {
     pub fn draw_teams_to_vec(&self, player_names: Vec<String>, teams_rating: [i32; 2], format: ImageOutputFormat) -> Vec<u8> {
-        let mut image: image::ImageBuffer<image::Rgb<u8>, Vec<u8>> = self.teams_image.clone();
+        let mut image = self.teams_image.clone();
 
         let player_text_scale = Scale::uniform(60.0);
         for i in 0..2 {

@@ -6,6 +6,5 @@ mixer_discord_bot.iml
 .vscode
 
 # Rust
-Cargo.lock
 Secrets.toml
 target/
