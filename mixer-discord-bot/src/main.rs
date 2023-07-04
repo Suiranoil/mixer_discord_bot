@@ -16,7 +16,6 @@ use shuttle_secrets::SecretStore;
 use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::log::info;
 
 use crate::bot::commands::lobby::LobbyCommand;
 use crate::bot::commands::ping::PingCommand;
@@ -95,17 +94,6 @@ async fn serenity(
         };
         data.insert::<ImageGeneratorContainer>(Arc::new(image_generator));
     }
-
-    let shard_manager = client.shard_manager.clone();
-    tokio::spawn(async move {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("Could not register ctrl+c handler");
-
-        info!("Bot has been shutdown.");
-
-        shard_manager.lock().await.shutdown_all().await;
-    });
 
     Ok(client.into())
 }
