@@ -10,6 +10,7 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(Lobbies::Table)
+                    .if_not_exists()
                     .col(
                         ColumnDef::new(Lobbies::Id)
                             .integer()
